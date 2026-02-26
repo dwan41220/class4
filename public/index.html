@@ -136,28 +136,13 @@
                 onchange="onThumbSelect(this)">
             </label>
           </div>
-          <div class="form-group" style="margin-bottom:16px;">
-            <label>업로드 방식</label>
-            <div class="flex gap-sm" style="margin-top:8px;">
-              <label style="cursor:pointer;display:flex;align-items:center;gap:4px;"><input type="radio"
-                  name="upload-type" value="file" checked onchange="toggleUploadType()"> 직접 파일 업로드 (무료 10MB 이하)</label>
-              <label style="cursor:pointer;display:flex;align-items:center;gap:4px;"><input type="radio"
-                  name="upload-type" value="link" onchange="toggleUploadType()"> 외부 드라이브 링크 (용량 무제한)</label>
-            </div>
-          </div>
-          <div class="form-group" id="file-upload-group">
+          <div class="form-group">
             <label>학습지 파일</label>
             <label class="file-input-label" id="file-label">
               <span>파일 선택 (PDF, 이미지, DOCX)</span>
               <input type="file" id="upload-file" accept=".pdf,.png,.jpg,.jpeg,.docx,.doc" style="display:none"
                 onchange="onFileSelect(this)">
             </label>
-          </div>
-          <div class="form-group hidden" id="link-upload-group">
-            <label>파일 공유 링크</label>
-            <input type="text" id="upload-link" class="form-input" placeholder="Google Drive, Dropbox 등의 공유 링크 주소">
-            <p style="font-size:0.8rem;color:var(--text2);margin-top:4px;">* 반드시 '링크가 있는 모든 사용자 보기 가능'으로 설정 후 붙여넣어주세요.
-            </p>
           </div>
           <button class="btn btn-primary btn-full" onclick="handleUpload()" id="upload-btn">업로드하기</button>
         </div>
