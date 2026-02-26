@@ -6,6 +6,7 @@ const Worksheet = require('../models/Worksheet');
 const View = require('../models/View');
 const User = require('../models/User');
 const PointTransaction = require('../models/PointTransaction');
+const Config = require('../models/Config');
 const { authMiddleware } = require('../middleware/auth');
 const { uploadFile, uploadImage, cloudinary } = require('../config/cloudinary');
 const { drive, uploadToGoogleDrive } = require('../config/gdrive');
@@ -42,7 +43,7 @@ router.post('/', authMiddleware, uploadFields, async (req, res) => {
         // 1. Upload Main File
         const isImageOrVideo = mainFile.mimetype.startsWith('image/') || mainFile.mimetype.startsWith('video/');
 
-        if (isImageOrVideo || !drive) {
+        if (isImageOrVideo) {
             // Cloudinary Upload
             const uploadResult = await new Promise((resolve, reject) => {
                 const stream = cloudinary.uploader.upload_stream(
@@ -58,8 +59,14 @@ router.post('/', authMiddleware, uploadFields, async (req, res) => {
             filePublicId = uploadResult.public_id;
             storageType = 'cloudinary';
         } else {
+            // Check Google Drive Tokens
+            const gdriveConfig = await Config.findOne({ key: 'gdrive_tokens' });
+            if (!gdriveConfig) {
+                return res.status(400).json({ error: '관리자가 구글 드라이브 연동을 완료하지 않아 문서 업로드가 불가능합니다.' });
+            }
+
             // Google Drive Upload
-            const gdriveResult = await uploadToGoogleDrive(mainFile.buffer, mainFile.originalname, mainFile.mimetype);
+            const gdriveResult = await uploadToGoogleDrive(mainFile.buffer, mainFile.originalname, mainFile.mimetype, gdriveConfig.value);
             fileUrl = gdriveResult.webContentLink; // Direct download link
             filePublicId = gdriveResult.fileId;
             storageType = 'gdrive';

@@ -1,43 +1,37 @@
 const { google } = require('googleapis');
 const stream = require('stream');
 
-let drive = null;
+function getOAuth2Client() {
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+    // For Render we construct the redirect URI.
+    const redirectUri = process.env.BASE_URL ? `${process.env.BASE_URL}/api/admin/gdrive/callback` : 'http://localhost:3000/api/admin/gdrive/callback';
 
-try {
-    if (process.env.GOOGLE_DRIVE_CREDENTIALS) {
-        let credentials;
-        try {
-            // First try parsing as direct JSON
-            credentials = JSON.parse(process.env.GOOGLE_DRIVE_CREDENTIALS);
-        } catch (e) {
-            // Fallback to base64 decode if it's base64 encoded
-            const decoded = Buffer.from(process.env.GOOGLE_DRIVE_CREDENTIALS, 'base64').toString('utf-8');
-            credentials = JSON.parse(decoded);
-        }
-
-        const auth = new google.auth.GoogleAuth({
-            credentials,
-            scopes: ['https://www.googleapis.com/auth/drive.file'], // Restrict scope to only files created by the app
-        });
-
-        drive = google.drive({ version: 'v3', auth });
-        console.log('Google Drive API initialized successfully.');
-    } else {
-        console.warn('Google Drive API NOT initialized. GOOGLE_DRIVE_CREDENTIALS missing.');
+    if (!clientId || !clientSecret) {
+        return null;
     }
-} catch (err) {
-    console.error('Failed to initialize Google Drive API:', err.message);
+
+    return new google.auth.OAuth2(clientId, clientSecret, redirectUri);
 }
 
-/**
- * Uploads a file buffer to Google Drive.
- * @param {Buffer} buffer The file buffer to upload
- * @param {string} filename The name of the file
- * @param {string} mimeType The mime type of the file
- * @returns {Promise<{fileId: string, webContentLink: string, webViewLink: string}>}
- */
-async function uploadToGoogleDrive(buffer, filename, mimeType) {
-    if (!drive) throw new Error('Google Drive API is not initialized.');
+function getAuthUrl(state) {
+    const oauth2Client = getOAuth2Client();
+    if (!oauth2Client) return null;
+
+    return oauth2Client.generateAuthUrl({
+        access_type: 'offline', // Requires refresh token
+        prompt: 'consent', // Force consent screen to get refresh token
+        scope: ['https://www.googleapis.com/auth/drive.file'],
+        state: state // Pass the admin JWT here so callback can verify
+    });
+}
+
+async function uploadToGoogleDrive(buffer, filename, mimeType, tokens) {
+    const oauth2Client = getOAuth2Client();
+    if (!oauth2Client) throw new Error('Google OAuth2 Client is not configured.');
+
+    oauth2Client.setCredentials(tokens);
+    const drive = google.drive({ version: 'v3', auth: oauth2Client });
 
     const folderId = process.env.GOOGLE_DRIVE_FOLDER_ID;
     if (!folderId) throw new Error('GOOGLE_DRIVE_FOLDER_ID is missing from environment variables.');
@@ -56,7 +50,6 @@ async function uploadToGoogleDrive(buffer, filename, mimeType) {
     };
 
     try {
-        // 1. Upload the file
         const res = await drive.files.create({
             resource: fileMetadata,
             media: media,
@@ -65,7 +58,7 @@ async function uploadToGoogleDrive(buffer, filename, mimeType) {
 
         const fileId = res.data.id;
 
-        // 2. Make the file publicly accessible to anyone with the link
+        // Make the file publicly accessible to anyone with the link
         await drive.permissions.create({
             fileId: fileId,
             requestBody: {
@@ -74,11 +67,10 @@ async function uploadToGoogleDrive(buffer, filename, mimeType) {
             },
         });
 
-        // 3. Return the exact links needed for the frontend
         return {
             fileId: res.data.id,
-            webContentLink: res.data.webContentLink, // direct download link
-            webViewLink: res.data.webViewLink // viewing link
+            webContentLink: res.data.webContentLink,
+            webViewLink: res.data.webViewLink
         };
     } catch (err) {
         console.error('Failed to upload to Google Drive:', err);
@@ -86,12 +78,13 @@ async function uploadToGoogleDrive(buffer, filename, mimeType) {
     }
 }
 
-/**
- * Deletes a file from Google Drive.
- * @param {string} fileId The ID of the file to delete
- */
-async function deleteFromGoogleDrive(fileId) {
-    if (!drive) throw new Error('Google Drive API is not initialized.');
+async function deleteFromGoogleDrive(fileId, tokens) {
+    const oauth2Client = getOAuth2Client();
+    if (!oauth2Client) throw new Error('Google OAuth2 Client is not configured.');
+
+    oauth2Client.setCredentials(tokens);
+    const drive = google.drive({ version: 'v3', auth: oauth2Client });
+
     try {
         await drive.files.delete({ fileId });
     } catch (err) {
@@ -99,4 +92,4 @@ async function deleteFromGoogleDrive(fileId) {
     }
 }
 
-module.exports = { drive, uploadToGoogleDrive, deleteFromGoogleDrive };
+module.exports = { getOAuth2Client, getAuthUrl, uploadToGoogleDrive, deleteFromGoogleDrive };

@@ -602,6 +602,52 @@ function adminNavigateTo(page) {
     if (page === 'admin-users') loadAdminUsers();
     if (page === 'admin-worksheets') loadAdminWorksheets();
     if (page === 'admin-subjects') loadAdminSubjects();
+    if (page === 'admin-settings') checkGoogleDriveStatus();
+}
+
+async function checkGoogleDriveStatus() {
+    try {
+        const data = await api('/api/admin/gdrive/status', { admin: true });
+        const statusText = $('gdrive-status-text');
+        const connectBtn = $('gdrive-connect-btn');
+        const disconnectBtn = $('gdrive-disconnect-btn');
+
+        if (data.connected) {
+            statusText.innerHTML = '✅ 연동됨 (대용량 업로드 정상 작동 중)';
+            statusText.style.color = '#16a34a';
+            connectBtn.style.display = 'none';
+            disconnectBtn.style.display = 'inline-block';
+        } else {
+            statusText.innerHTML = '⚠️ 연동되지 않음 (대용량 업로드 제한됨)';
+            statusText.style.color = '#dc2626';
+            connectBtn.style.display = 'inline-block';
+            disconnectBtn.style.display = 'none';
+        }
+    } catch (e) {
+        toast('구글 드라이브 상태를 가져오는데 실패했습니다.', 'error');
+    }
+}
+
+async function connectGoogleDrive() {
+    try {
+        const data = await api('/api/admin/gdrive/auth', { admin: true });
+        if (data.url) {
+            window.location.href = data.url; // Redirect to Google Login
+        }
+    } catch (e) {
+        toast(e.message, 'error');
+    }
+}
+
+async function disconnectGoogleDrive() {
+    if (!confirm('정말 구글 드라이브 연동을 해제하시겠습니까? 대용량 다운로드 및 업로드가 중단됩니다.')) return;
+    try {
+        await api('/api/admin/gdrive/disconnect', { method: 'DELETE', admin: true });
+        toast('구글 드라이브 연동이 해제되었습니다.', 'success');
+        checkGoogleDriveStatus();
+    } catch (e) {
+        toast(e.message, 'error');
+    }
 }
 
 async function loadAdminUsers() {
