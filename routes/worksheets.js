@@ -27,17 +27,18 @@ const uploadFields = (req, res, next) => {
 
 router.post('/', authMiddleware, uploadFields, async (req, res) => {
     try {
-        const { title, subjectId } = req.body;
+        const { title, subjectId, externalUrl } = req.body;
         if (!title || !subjectId) return res.status(400).json({ error: '제목과 과목을 입력하세요.' });
-        if (!req.files?.file?.[0]) return res.status(400).json({ error: '파일을 선택하세요.' });
+        if (!req.files?.file?.[0] && !externalUrl) return res.status(400).json({ error: '파일을 선택하거나 외부 링크를 입력하세요.' });
 
         const worksheet = await Worksheet.create({
             title,
             subject: subjectId,
-            fileUrl: req.files.file[0].path,
-            filePublicId: req.files.file[0].filename,
-            thumbnailUrl: req.files.thumbnail?.[0]?.path || null,
-            thumbnailPublicId: req.files.thumbnail?.[0]?.filename || null,
+            fileUrl: req.files?.file?.[0]?.path || null,
+            filePublicId: req.files?.file?.[0]?.filename || null,
+            externalUrl: externalUrl || null,
+            thumbnailUrl: req.files?.thumbnail?.[0]?.path || null,
+            thumbnailPublicId: req.files?.thumbnail?.[0]?.filename || null,
             uploader: req.user.userId,
         });
 
@@ -117,9 +118,13 @@ router.get('/:id/download', authMiddleware, async (req, res) => {
         const worksheet = await Worksheet.findById(req.params.id);
         if (!worksheet) return res.status(404).json({ error: '학습지를 찾을 수 없습니다.' });
 
+        // 외부 링크인 경우 바로 리다이렉트 (클라이언트에서 새 창 열기)
+        if (worksheet.externalUrl) {
+            return res.json({ externalUrl: worksheet.externalUrl });
+        }
+
         let fileUrl = worksheet.fileUrl;
-
-
+        if (!fileUrl) return res.status(404).json({ error: '파일 URL이 없습니다.' });
 
         // 파일 확장자 추출
         const urlPath = new URL(fileUrl).pathname;

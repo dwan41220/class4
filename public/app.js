@@ -8,6 +8,7 @@ let currentPage = 'upload';
 let authMode = 'check'; // check → activate → login
 let authUserActivated = false;
 let isUploading = false;
+let uploadMode = 'file';
 
 // ─── HELPERS ───
 function togglePw(inputId, btn) {
@@ -222,20 +223,34 @@ function onFileSelect(input) {
     }
 }
 
+function toggleUploadType() {
+    uploadMode = document.querySelector('input[name="upload-type"]:checked').value;
+    if (uploadMode === 'file') {
+        $('file-upload-group').classList.remove('hidden');
+        $('link-upload-group').classList.add('hidden');
+    } else {
+        $('file-upload-group').classList.add('hidden');
+        $('link-upload-group').classList.remove('hidden');
+    }
+}
+
 async function handleUpload() {
     const subjectId = $('upload-subject').value;
     const title = $('upload-title').value.trim();
     const file = $('upload-file').files[0];
+    const externalUrl = $('upload-link')?.value.trim();
     const thumb = $('upload-thumbnail').files[0];
 
     if (!subjectId) return toast('과목을 선택하세요.', 'error');
     if (!title) return toast('학습지 이름을 입력하세요.', 'error');
-    if (!file) return toast('파일을 선택하세요.', 'error');
+    if (uploadMode === 'file' && !file) return toast('파일을 선택하세요.', 'error');
+    if (uploadMode === 'link' && !externalUrl) return toast('외부 링크 주소를 입력하세요.', 'error');
 
     const fd = new FormData();
     fd.append('subjectId', subjectId);
     fd.append('title', title);
-    fd.append('file', file);
+    if (uploadMode === 'file' && file) fd.append('file', file);
+    if (uploadMode === 'link' && externalUrl) fd.append('externalUrl', externalUrl);
     if (thumb) fd.append('thumbnail', thumb);
 
     $('upload-btn').disabled = true;
@@ -255,6 +270,7 @@ async function handleUpload() {
     isUploading = false;
     $('upload-btn').disabled = false;
     $('upload-btn').textContent = '업로드하기';
+    if ($('upload-link')) $('upload-link').value = '';
 }
 
 function openNewSubjectModal() {
@@ -383,6 +399,17 @@ async function downloadWorksheet(id, title) {
         if (!response.ok) {
             const err = await response.json().catch(() => ({}));
             throw new Error(err.error || '다운로드 실패');
+        }
+
+        // 외부 링크 리다이렉트 응답인지 확인
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+            const data = await response.json();
+            if (data.externalUrl) {
+                window.open(data.externalUrl, '_blank');
+                toast('새 창에서 외부 링크가 열립니다.', 'success');
+                return;
+            }
         }
 
         const blob = await response.blob();
