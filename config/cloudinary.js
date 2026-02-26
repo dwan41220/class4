@@ -27,7 +27,7 @@ const imageStorage = new CloudinaryStorage({
     },
 });
 
-const uploadFile = multer({ storage: fileStorage, limits: { fileSize: 50 * 1024 * 1024 } });
+const uploadFile = multer({ storage: fileStorage, limits: { fileSize: 120 * 1024 * 1024 } });
 const uploadImage = multer({ storage: imageStorage, limits: { fileSize: 10 * 1024 * 1024 } });
 
 module.exports = { cloudinary, uploadFile, uploadImage };
