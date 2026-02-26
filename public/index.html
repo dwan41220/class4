@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>스마트 학습지 저장소</title>
+  <meta name="description" content="학습지를 공유하고 포인트를 적립하는 스마트 저장소">
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <div id="toast-container"></div>
+
+  <!-- AUTH PAGE -->
+  <div id="auth-page" class="auth-page">
+    <div class="auth-card">
+      <h1>학습지 저장소</h1>
+      <p>학습지를 공유하고 포인트를 적립하세요!</p>
+      <div class="auth-tabs">
+        <button class="auth-tab active" onclick="switchAuthTab('user')">유저 로그인</button>
+        <button class="auth-tab" onclick="switchAuthTab('admin')">관리자</button>
+      </div>
+      <!-- User Login -->
+      <div id="user-auth-form">
+        <div class="form-group">
+          <label>계정 이름</label>
+          <input type="text" id="auth-username" class="form-input" placeholder="관리자가 만든 계정 이름 입력">
+        </div>
+        <div id="password-section" class="hidden">
+          <div class="form-group">
+            <label id="password-label">비밀번호</label>
+            <div class="pw-wrapper">
+              <input type="password" id="auth-password" class="form-input" placeholder="비밀번호 입력">
+              <button type="button" class="pw-toggle" onclick="togglePw('auth-password',this)">👁</button>
+            </div>
+          </div>
+          <div id="password-confirm-group" class="form-group hidden">
+            <label>비밀번호 확인</label>
+            <div class="pw-wrapper">
+              <input type="password" id="auth-password-confirm" class="form-input" placeholder="비밀번호 다시 입력">
+              <button type="button" class="pw-toggle" onclick="togglePw('auth-password-confirm',this)">👁</button>
+            </div>
+          </div>
+        </div>
+        <button id="auth-next-btn" class="btn btn-primary btn-full" onclick="handleUserAuth()">다음</button>
+      </div>
+      <!-- Admin Login -->
+      <div id="admin-auth-form" class="hidden">
+        <div id="admin-status-msg" class="text-center" style="margin-bottom:16px;color:var(--text2);font-size:.9rem">
+        </div>
+        <div class="form-group">
+          <label>관리자 아이디</label>
+          <input type="text" id="admin-username" class="form-input" placeholder="관리자 아이디">
+        </div>
+        <div class="form-group">
+          <label>관리자 비밀번호</label>
+          <div class="pw-wrapper">
+            <input type="password" id="admin-password" class="form-input" placeholder="관리자 비밀번호">
+            <button type="button" class="pw-toggle" onclick="togglePw('admin-password',this)">👁</button>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-full" onclick="handleAdminAuth()">로그인</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="dashboard" class="dashboard hidden">
+    <!-- Mobile Header -->
+    <div class="mobile-header flex items-center justify-between">
+      <h1>학습지 저장소</h1>
+      <span id="mobile-points" style="color:var(--accent2);font-weight:700;font-size:.9rem"></span>
+    </div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">학습지 저장소</div>
+      <nav class="sidebar-nav">
+        <div class="nav-item active" data-page="upload" onclick="navigateTo('upload')">
+          업로드
+        </div>
+        <div class="nav-item" data-page="browse" onclick="navigateTo('browse')">
+          다운로드
+        </div>
+        <div class="nav-item" data-page="friends" onclick="navigateTo('friends')">
+          친구
+        </div>
+        <div class="nav-item" data-page="classmates" onclick="navigateTo('classmates')">
+          학우들
+        </div>
+        <div class="nav-item" data-page="profile" onclick="navigateTo('profile')">
+          <span class="icon">👤</span> 계정
+        </div>
+        <div class="nav-item" data-page="history" onclick="navigateTo('history')">
+          포인트 기록
+        </div>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <div class="avatar" id="sidebar-avatar"></div>
+          <div class="info">
+            <div class="name" id="sidebar-name"></div>
+            <div class="pts" id="sidebar-points"></div>
+          </div>
+        </div>
+        <button class="btn btn-secondary btn-sm btn-full" style="margin-top:12px" onclick="logout()">로그아웃</button>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- UPLOAD PAGE -->
+      <div id="page-upload" class="page">
+        <div class="page-header">
+          <h2>학습지 업로드</h2>
+          <p>과목을 선택하고 학습지를 업로드하세요</p>
+        </div>
+        <div class="card" style="max-width:600px">
+          <div class="form-group">
+            <label>과목 선택</label>
+            <div class="flex gap-sm">
+              <select id="upload-subject" class="form-input" style="flex:1"></select>
+              <button class="btn btn-secondary btn-sm" onclick="openNewSubjectModal()">+ 새 과목</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>학습지 이름</label>
+            <input type="text" id="upload-title" class="form-input" placeholder="예: 2학기 중간고사 정리">
+          </div>
+          <div class="form-group">
+            <label>표지 이미지 (선택)</label>
+            <label class="file-input-label" id="thumb-label">
+              <span>이미지 선택</span>
+              <input type="file" id="upload-thumbnail" accept="image/*" style="display:none"
+                onchange="onThumbSelect(this)">
+            </label>
+          </div>
+          <div class="form-group">
+            <label>학습지 파일</label>
+            <label class="file-input-label" id="file-label">
+              <span>파일 선택 (PDF, 이미지, DOCX)</span>
+              <input type="file" id="upload-file" accept=".pdf,.png,.jpg,.jpeg,.docx,.doc" style="display:none"
+                onchange="onFileSelect(this)">
+            </label>
+          </div>
+          <button class="btn btn-primary btn-full" onclick="handleUpload()" id="upload-btn">업로드하기</button>
+        </div>
+      </div>
+
+      <!-- BROWSE PAGE -->
+      <div id="page-browse" class="page hidden">
+        <div class="page-header">
+          <h2>학습지 탐색</h2>
+          <p>과목을 선택하고 학습지를 다운로드하세요</p>
+        </div>
+        <div id="subject-list" class="card-grid"></div>
+        <div id="worksheet-list-section" class="hidden">
+          <div class="flex items-center justify-between" style="margin-bottom:16px">
+            <button class="btn btn-secondary btn-sm" onclick="backToSubjects()">← 과목 목록</button>
+            <h3 id="current-subject-name" style="font-weight:700"></h3>
+          </div>
+          <div class="sort-tabs">
+            <button class="sort-tab active" onclick="sortWorksheets('latest')">최신순</button>
+            <button class="sort-tab" onclick="sortWorksheets('views')">인기순</button>
+          </div>
+          <div id="worksheet-list" class="card-grid"></div>
+        </div>
+      </div>
+
+      <!-- PROFILE PAGE -->
+      <div id="page-profile" class="page hidden">
+        <div class="page-header">
+          <h2>내 프로필</h2>
+        </div>
+        <div class="stat-grid" id="profile-stats"></div>
+        <div class="profile-section">
+          <h3>기여 학습지 TOP 3</h3>
+          <div id="top-worksheets" class="user-list"></div>
+        </div>
+      </div>
+
+      <!-- FRIENDS PAGE -->
+      <div id="page-friends" class="page hidden">
+        <div class="page-header">
+          <h2>친구</h2>
+          <p>팔로우한 친구 목록 & 포인트 전송</p>
+        </div>
+        <div class="flex gap-sm" style="margin-bottom:16px">
+          <button class="sort-tab active" onclick="showFriendsTab('following')">팔로잉</button>
+          <button class="sort-tab" onclick="showFriendsTab('followers')">팔로워</button>
+        </div>
+        <div id="friends-list" class="user-list" style="margin-bottom:24px"></div>
+        <div class="profile-section">
+          <h3>포인트 전송</h3>
+          <div class="form-group">
+            <label>받는 친구</label>
+            <select id="transfer-to" class="form-input"></select>
+          </div>
+          <div class="form-group">
+            <label>포인트</label>
+            <input type="number" id="transfer-amount" class="form-input" placeholder="전송할 포인트" min="1">
+          </div>
+          <p style="font-size:.8rem;color:var(--text2);margin-bottom:12px">수수료 8%가 부과됩니다</p>
+          <button class="btn btn-primary" onclick="handleTransfer()">전송하기</button>
+        </div>
+      </div>
+
+      <!-- CLASSMATES PAGE -->
+      <div id="page-classmates" class="page hidden">
+        <div class="page-header">
+          <h2>학우들</h2>
+          <p>전체 학우 목록에서 팔로우/언팔로우하세요</p>
+        </div>
+        <div id="classmates-list" class="user-list"></div>
+      </div>
+
+      <!-- HISTORY PAGE -->
+      <div id="page-history" class="page hidden">
+        <div class="page-header">
+          <h2>포인트 기록</h2>
+          <p>포인트 적립 및 사용 내역</p>
+        </div>
+        <div id="history-list"></div>
+      </div>
+    </main>
+
+    <!-- Mobile Nav -->
+    <nav class="mobile-nav">
+      <div class="mobile-nav-inner">
+        <div class="mobile-nav-item active" data-page="upload" onclick="navigateTo('upload')">
+          업로드
+        </div>
+        <div class="mobile-nav-item" data-page="browse" onclick="navigateTo('browse')">
+          탐색
+        </div>
+        <div class="mobile-nav-item" data-page="friends" onclick="navigateTo('friends')">
+          친구
+        </div>
+        <div class="mobile-nav-item" data-page="classmates" onclick="navigateTo('classmates')">
+          학우
+        </div>
+        <div class="mobile-nav-item" data-page="profile" onclick="navigateTo('profile')">
+          <span class="icon">👤</span>계정
+        </div>
+      </div>
+    </nav>
+  </div>
+
+  <!-- ADMIN DASHBOARD -->
+  <div id="admin-dashboard" class="dashboard hidden">
+    <div class="mobile-header flex items-center justify-between">
+      <h1>관리자</h1>
+      <button class="btn btn-secondary btn-sm" onclick="logout()">로그아웃</button>
+    </div>
+    <aside class="sidebar">
+      <div class="sidebar-logo">관리자 대시보드</div>
+      <nav class="sidebar-nav">
+        <div class="nav-item" data-page="admin-users" onclick="adminNavigateTo('admin-users')">
+          계정 관리
+        </div>
+        <div class="nav-item" data-page="admin-worksheets" onclick="adminNavigateTo('admin-worksheets')">
+          학습지 관리
+        </div>
+        <div class="nav-item" data-page="admin-subjects" onclick="adminNavigateTo('admin-subjects')">
+          과목 관리
+        </div>
+      </nav>
+      <div class="sidebar-footer">
+        <button class="btn btn-secondary btn-sm btn-full" onclick="logout()">로그아웃</button>
+      </div>
+    </aside>
+    <main class="main-content">
+      <!-- ADMIN USERS PAGE -->
+      <div id="page-admin-users" class="page">
+        <div class="page-header flex items-center justify-between">
+          <div>
+            <h2>계정 관리</h2>
+            <p>계정 추가/삭제 및 포인트 관리</p>
+          </div>
+          <button class="btn btn-primary" onclick="openAddUserModal()">+ 계정 추가</button>
+        </div>
+        <div class="card" style="overflow-x:auto">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>계정</th>
+                <th>상태</th>
+                <th>포인트</th>
+                <th>관리</th>
+              </tr>
+            </thead>
+            <tbody id="admin-users-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+      <!-- ADMIN WORKSHEETS PAGE -->
+      <div id="page-admin-worksheets" class="page hidden">
+        <div class="page-header">
+          <h2>학습지 관리</h2>
+          <p>조회수 수정 및 삭제 관리</p>
+        </div>
+        <div class="card" style="overflow-x:auto">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>제목</th>
+                <th>과목</th>
+                <th>업로더</th>
+                <th>조회수</th>
+                <th>관리</th>
+              </tr>
+            </thead>
+            <tbody id="admin-worksheets-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+      <!-- ADMIN SUBJECTS PAGE -->
+      <div id="page-admin-subjects" class="page hidden">
+        <div class="page-header">
+          <h2>과목 관리</h2>
+          <p style="color:var(--danger)">⚠️ 과목 삭제 시 연동된 모든 학습지와 파일이 영구 삭제됩니다.</p>
+        </div>
+        <div class="card" style="overflow-x:auto">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>과목 이름</th>
+                <th>생성자</th>
+                <th>포함된 학습지 수</th>
+                <th>관리</th>
+              </tr>
+            </thead>
+            <tbody id="admin-subjects-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- MODALS -->
+  <div id="modal-container" class="hidden"></div>
+
+  <script src="app.js"></script>
+</body>
+
+</html>
