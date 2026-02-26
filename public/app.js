@@ -7,6 +7,7 @@ let currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
 let currentPage = 'upload';
 let authMode = 'check'; // check → activate → login
 let authUserActivated = false;
+let isUploading = false;
 
 // ─── HELPERS ───
 function togglePw(inputId, btn) {
@@ -182,6 +183,7 @@ async function refreshUser() {
 }
 
 function navigateTo(page) {
+    if (isUploading) return toast('파일 업로드가 진행 중입니다. 잠시만 기다려주세요.', 'error');
     currentPage = page;
     document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
     show(`page-${page}`);
@@ -237,7 +239,8 @@ async function handleUpload() {
     if (thumb) fd.append('thumbnail', thumb);
 
     $('upload-btn').disabled = true;
-    $('upload-btn').textContent = '업로드 중...';
+    $('upload-btn').textContent = '대용량 파일 업로드 중... (창을 이동하지 마세요)';
+    isUploading = true;
     try {
         await api('/api/worksheets', { method: 'POST', body: fd });
         toast('업로드 성공!', 'success');
@@ -249,6 +252,7 @@ async function handleUpload() {
         $('thumb-label').classList.remove('has-file');
         $('thumb-label').querySelector('span').textContent = '이미지 선택';
     } catch (e) { toast(e.message, 'error'); }
+    isUploading = false;
     $('upload-btn').disabled = false;
     $('upload-btn').textContent = '업로드하기';
 }
