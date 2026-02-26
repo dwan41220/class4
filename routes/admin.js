@@ -7,6 +7,7 @@ const View = require('../models/View');
 const PointTransaction = require('../models/PointTransaction');
 const { adminMiddleware } = require('../middleware/auth');
 const { cloudinary } = require('../config/cloudinary');
+const { deleteFromGoogleDrive } = require('../config/gdrive');
 
 // POST /api/admin/users — 새 계정 생성 (이름만)
 router.post('/users', adminMiddleware, async (req, res) => {
@@ -95,7 +96,13 @@ router.delete('/worksheets/:id', adminMiddleware, async (req, res) => {
         const worksheet = await Worksheet.findById(req.params.id);
         if (!worksheet) return res.status(404).json({ error: '학습지를 찾을 수 없습니다.' });
 
-        if (worksheet.filePublicId) await cloudinary.uploader.destroy(worksheet.filePublicId);
+        if (worksheet.filePublicId) {
+            if (worksheet.storageType === 'gdrive') {
+                await deleteFromGoogleDrive(worksheet.filePublicId);
+            } else {
+                await cloudinary.uploader.destroy(worksheet.filePublicId);
+            }
+        }
         if (worksheet.thumbnailPublicId) await cloudinary.uploader.destroy(worksheet.thumbnailPublicId);
 
         await View.deleteMany({ worksheet: worksheet._id });
@@ -118,7 +125,13 @@ router.delete('/subjects/:id', adminMiddleware, async (req, res) => {
 
         const worksheets = await Worksheet.find({ subject: subject._id });
         for (const w of worksheets) {
-            if (w.filePublicId) await cloudinary.uploader.destroy(w.filePublicId);
+            if (w.filePublicId) {
+                if (w.storageType === 'gdrive') {
+                    await deleteFromGoogleDrive(w.filePublicId);
+                } else {
+                    await cloudinary.uploader.destroy(w.filePublicId);
+                }
+            }
             if (w.thumbnailPublicId) await cloudinary.uploader.destroy(w.thumbnailPublicId);
             await View.deleteMany({ worksheet: w._id });
             await Worksheet.findByIdAndDelete(w._id);

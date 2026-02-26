@@ -5,6 +5,7 @@ const worksheetSchema = new mongoose.Schema({
     subject: { type: mongoose.Schema.Types.ObjectId, ref: 'Subject', required: true },
     fileUrl: { type: String, required: true },
     filePublicId: { type: String, default: null },
+    storageType: { type: String, enum: ['cloudinary', 'firebase', 'gdrive'], default: 'cloudinary' },
     thumbnailUrl: { type: String, default: null },
     thumbnailPublicId: { type: String, default: null },
     uploader: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },

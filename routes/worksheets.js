@@ -8,13 +8,14 @@ const User = require('../models/User');
 const PointTransaction = require('../models/PointTransaction');
 const { authMiddleware } = require('../middleware/auth');
 const { uploadFile, uploadImage, cloudinary } = require('../config/cloudinary');
+const { drive, uploadToGoogleDrive } = require('../config/gdrive');
 const multer = require('multer');
 
 // POST /api/worksheets — 업로드 (파일 + 썸네일)
 const uploadFields = (req, res, next) => {
     const upload = multer({
-        storage: require('../config/cloudinary').uploadFile.storage,
-        limits: { fileSize: 50 * 1024 * 1024 },
+        storage: multer.memoryStorage(),
+        limits: { fileSize: 120 * 1024 * 1024 }, // 120MB Limit
     }).fields([
         { name: 'file', maxCount: 1 },
         { name: 'thumbnail', maxCount: 1 },
@@ -31,13 +32,67 @@ router.post('/', authMiddleware, uploadFields, async (req, res) => {
         if (!title || !subjectId) return res.status(400).json({ error: '제목과 과목을 입력하세요.' });
         if (!req.files?.file?.[0]) return res.status(400).json({ error: '파일을 선택하세요.' });
 
+        const mainFile = req.files.file[0];
+        const thumbFile = req.files.thumbnail?.[0];
+
+        let fileUrl = '';
+        let filePublicId = '';
+        let storageType = 'cloudinary';
+
+        // 1. Upload Main File
+        const isImageOrVideo = mainFile.mimetype.startsWith('image/') || mainFile.mimetype.startsWith('video/');
+
+        if (isImageOrVideo || !drive) {
+            // Cloudinary Upload
+            const uploadResult = await new Promise((resolve, reject) => {
+                const stream = cloudinary.uploader.upload_stream(
+                    { folder: 'smart-worksheet-hub/files', resource_type: 'auto' },
+                    (error, result) => {
+                        if (error) reject(error);
+                        else resolve(result);
+                    }
+                );
+                stream.end(mainFile.buffer);
+            });
+            fileUrl = uploadResult.secure_url;
+            filePublicId = uploadResult.public_id;
+            storageType = 'cloudinary';
+        } else {
+            // Google Drive Upload
+            const gdriveResult = await uploadToGoogleDrive(mainFile.buffer, mainFile.originalname, mainFile.mimetype);
+            fileUrl = gdriveResult.webContentLink; // Direct download link
+            filePublicId = gdriveResult.fileId;
+            storageType = 'gdrive';
+        }
+
+        // 2. Upload Thumbnail (Always Cloudinary)
+        let thumbUrl = null;
+        let thumbPublicId = null;
+
+        if (thumbFile) {
+            const thumbResult = await new Promise((resolve, reject) => {
+                const stream = cloudinary.uploader.upload_stream(
+                    { folder: 'smart-worksheet-hub/thumbnails', resource_type: 'image' },
+                    (error, result) => {
+                        if (error) reject(error);
+                        else resolve(result);
+                    }
+                );
+                stream.end(thumbFile.buffer);
+            });
+            thumbUrl = thumbResult.secure_url;
+            thumbPublicId = thumbResult.public_id;
+        }
+
+        // 3. Save to DB
         const worksheet = await Worksheet.create({
             title,
             subject: subjectId,
-            fileUrl: req.files.file[0].path,
-            filePublicId: req.files.file[0].filename,
-            thumbnailUrl: req.files.thumbnail?.[0]?.path || null,
-            thumbnailPublicId: req.files.thumbnail?.[0]?.filename || null,
+            fileUrl,
+            filePublicId,
+            storageType,
+            thumbnailUrl: thumbUrl,
+            thumbnailPublicId: thumbPublicId,
             uploader: req.user.userId,
         });
 
@@ -45,7 +100,7 @@ router.post('/', authMiddleware, uploadFields, async (req, res) => {
         await worksheet.populate('uploader', 'username');
         res.json({ message: '업로드 완료!', worksheet });
     } catch (err) {
-        console.error(err);
+        console.error('Upload error:', err);
         res.status(500).json({ error: '서버 오류' });
     }
 });
