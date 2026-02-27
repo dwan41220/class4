@@ -617,7 +617,7 @@ function adminNavigateTo(page) {
   if (page === 'admin-users') loadAdminUsers();
   if (page === 'admin-worksheets') loadAdminWorksheets();
   if (page === 'admin-subjects') loadAdminSubjects();
-  if (page === 'admin-settings') checkGoogleDriveStatus();
+  if (page === 'admin-settings') { checkGoogleDriveStatus(); loadStorageInfo(); }
 }
 
 async function checkGoogleDriveStatus() {
@@ -628,12 +628,12 @@ async function checkGoogleDriveStatus() {
     const disconnectBtn = $('gdrive-disconnect-btn');
 
     if (data.connected) {
-      statusText.innerHTML = '✅ 연동됨 (대용량 업로드 정상 작동 중)';
+      statusText.innerHTML = '연동됨 (대용량 업로드 정상 작동 중)';
       statusText.style.color = '#16a34a';
       connectBtn.style.display = 'none';
       disconnectBtn.style.display = 'inline-block';
     } else {
-      statusText.innerHTML = '⚠️ 연동되지 않음 (대용량 업로드 제한됨)';
+      statusText.innerHTML = '연동되지 않음 (대용량 업로드 제한됨)';
       statusText.style.color = '#dc2626';
       connectBtn.style.display = 'inline-block';
       disconnectBtn.style.display = 'none';
@@ -662,6 +662,50 @@ async function disconnectGoogleDrive() {
     checkGoogleDriveStatus();
   } catch (e) {
     toast(e.message, 'error');
+  }
+}
+
+async function loadStorageInfo() {
+  try {
+    const data = await api('/api/admin/storage', { admin: true });
+    let html = '';
+
+    if (data.cloudinary) {
+      const c = data.cloudinary;
+      const usedMB = (c.usedStorage / (1024 * 1024)).toFixed(1);
+      const totalMB = (c.totalStorage / (1024 * 1024)).toFixed(0);
+      const pct = c.totalStorage > 0 ? ((c.usedStorage / c.totalStorage) * 100).toFixed(1) : 0;
+      const creditPct = c.totalCredits > 0 ? ((c.usedCredits / c.totalCredits) * 100).toFixed(1) : 0;
+
+      html += `<div style="margin-bottom:14px">`;
+      html += `<div style="font-weight:600;margin-bottom:8px">Cloudinary 저장소</div>`;
+      html += `<div style="margin-bottom:6px">저장 공간: ${usedMB} MB / ${totalMB} MB (${pct}%)</div>`;
+      html += `<div style="background:#e5e7eb;border-radius:4px;height:8px;overflow:hidden;margin-bottom:10px">`;
+      html += `<div style="background:${pct > 80 ? '#ef4444' : '#0095f6'};height:100%;width:${Math.min(pct, 100)}%;border-radius:4px;transition:.3s"></div></div>`;
+      html += `<div style="margin-bottom:6px">크레딧: ${creditPct}% 사용</div>`;
+      html += `<div style="background:#e5e7eb;border-radius:4px;height:8px;overflow:hidden;margin-bottom:10px">`;
+      html += `<div style="background:${creditPct > 80 ? '#ef4444' : '#22c55e'};height:100%;width:${Math.min(creditPct, 100)}%;border-radius:4px;transition:.3s"></div></div>`;
+      html += `<div style="font-size:.78rem;color:#999">리소스 수: ${c.resources}개</div>`;
+      html += `</div>`;
+    } else {
+      html += `<div style="margin-bottom:14px;color:#999">Cloudinary 정보를 불러올 수 없습니다.</div>`;
+    }
+
+    if (data.mongodb) {
+      const m = data.mongodb;
+      html += `<div style="font-weight:600;margin-bottom:8px">DB 통계</div>`;
+      html += `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">`;
+      html += `<div style="background:var(--bg3);padding:10px;border-radius:8px;text-align:center"><div style="font-weight:700;font-size:1.1rem">${m.userCount}</div><div style="font-size:.7rem;color:#999">계정</div></div>`;
+      html += `<div style="background:var(--bg3);padding:10px;border-radius:8px;text-align:center"><div style="font-weight:700;font-size:1.1rem">${m.worksheetCount}</div><div style="font-size:.7rem;color:#999">학습지</div></div>`;
+      html += `<div style="background:var(--bg3);padding:10px;border-radius:8px;text-align:center"><div style="font-weight:700;font-size:1.1rem">${m.subjectCount}</div><div style="font-size:.7rem;color:#999">과목</div></div>`;
+      html += `</div>`;
+    }
+
+    html += `<div style="margin-top:12px;font-size:.75rem;color:#bbb">Google Drive: ${data.gdrive ? '연동됨' : '연동 안 됨'}</div>`;
+
+    $('storage-info').innerHTML = html;
+  } catch (e) {
+    $('storage-info').innerHTML = '<span style="color:var(--danger)">저장 정보 로딩 실패</span>';
   }
 }
 

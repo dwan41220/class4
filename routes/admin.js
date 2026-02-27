@@ -224,4 +224,42 @@ router.delete('/subjects/:id', adminMiddleware, async (req, res) => {
     }
 });
 
+// GET /api/admin/storage — 저장 공간 현황
+router.get('/storage', adminMiddleware, async (req, res) => {
+    try {
+        const info = { cloudinary: null, mongodb: null, gdrive: false };
+
+        // Cloudinary 사용량
+        try {
+            const usage = await cloudinary.api.usage();
+            info.cloudinary = {
+                usedStorage: usage.storage?.usage || 0,
+                totalStorage: usage.storage?.limit || 0,
+                usedCredits: usage.credits?.usage || 0,
+                totalCredits: usage.credits?.limit || 0,
+                usedBandwidth: usage.bandwidth?.usage || 0,
+                totalBandwidth: usage.bandwidth?.limit || 0,
+                resources: usage.resources || 0,
+            };
+        } catch (e) {
+            console.error('Cloudinary usage error:', e.message);
+        }
+
+        // MongoDB 통계
+        const worksheetCount = await Worksheet.countDocuments();
+        const userCount = await User.countDocuments();
+        const subjectCount = await Subject.countDocuments();
+        info.mongodb = { worksheetCount, userCount, subjectCount };
+
+        // Google Drive 연동 여부
+        const gdriveConfig = await Config.findOne({ key: 'gdrive_tokens' });
+        info.gdrive = !!gdriveConfig;
+
+        res.json(info);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: '서버 오류' });
+    }
+});
+
 module.exports = router;
