@@ -271,14 +271,39 @@ textarea {
   line-height: 1.4
 }
 
+.auth-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 4px
+}
+
+.auth-logo-img {
+  width: 42px;
+  height: 42px;
+  object-fit: contain
+}
+
+.auth-logo-sub {
+  font-size: .65rem;
+  font-weight: 400;
+  color: var(--text2);
+  letter-spacing: .5px;
+  font-style: italic;
+  margin-top: 2px
+}
+
 .auth-card h1 {
-  font-size: 2.2rem;
-  font-weight: 800;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 2rem;
+  font-weight: 700;
   background: var(--ig-gradient2);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  margin-bottom: 8px;
-  letter-spacing: -.5px
+  margin-bottom: 0;
+  letter-spacing: -.5px;
+  line-height: 1.2
 }
 
 .auth-card p {
