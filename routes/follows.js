@@ -37,7 +37,18 @@ router.delete('/:userId', authMiddleware, async (req, res) => {
 router.get('/followers', authMiddleware, async (req, res) => {
     try {
         const follows = await Follow.find({ following: req.user.userId }).populate('follower', 'username points');
-        res.json(follows.map(f => f.follower));
+
+        // 내가 이 사람들을 팔로우하고 있는지 확인
+        const myFollowings = await Follow.find({ follower: req.user.userId });
+        const myFollowingIds = myFollowings.map(f => f.following.toString());
+
+        const followersWithStatus = follows.map(f => {
+            const user = f.follower.toObject();
+            user.isFollowing = myFollowingIds.includes(user._id.toString());
+            return user;
+        });
+
+        res.json(followersWithStatus);
     } catch (err) {
         res.status(500).json({ error: '서버 오류' });
     }

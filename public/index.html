@@ -184,9 +184,12 @@
       <div id="page-friends" class="page hidden">
         <div class="page-header">
           <h2>맞팔 친구</h2>
-          <p>서로 팔로우한 친구 목록 & 포인트 전송</p>
+          <p>서로 맞팔로우한 친구들의 인기 학습지 & 포인트 전송</p>
         </div>
-        <div id="friends-list" class="user-list" style="margin-bottom:24px"></div>
+        <div class="profile-section" style="margin-bottom:24px">
+          <h3>친구가 올린 베스트 학습지</h3>
+          <div id="friends-best-worksheets" class="card-grid"></div>
+        </div>
         <div class="profile-section">
           <h3>포인트 전송</h3>
           <div class="form-group">
@@ -207,6 +210,11 @@
         <div class="page-header">
           <h2>학우들</h2>
           <p>전체 학우 목록에서 팔로우/언팔로우하세요</p>
+        </div>
+        <div class="flex gap-sm" style="margin-bottom:16px">
+          <button class="classmate-tab sort-tab active" onclick="showClassmatesTab('all')">전체 학우</button>
+          <button class="classmate-tab sort-tab" onclick="showClassmatesTab('following')">팔로잉</button>
+          <button class="classmate-tab sort-tab" onclick="showClassmatesTab('followers')">팔로워</button>
         </div>
         <div id="classmates-list" class="user-list"></div>
       </div>

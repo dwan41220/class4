@@ -453,28 +453,37 @@ async function loadProfile() {
 
 // ─── FRIENDS PAGE ───
 function loadFriendsPage() {
-    loadMutualFriends();
+    loadFriendsBestWorksheets();
     loadTransferList();
 }
 
-async function loadMutualFriends() {
+async function loadFriendsBestWorksheets() {
     try {
-        const data = await api('/api/follows/mutual');
-        renderFriendsList(data, 'mutual');
-    } catch (e) { }
+        const worksheets = await api('/api/worksheets/friends/best');
+        const container = $('friends-best-worksheets');
+
+        container.innerHTML = worksheets.length
+            ? worksheets.map(w => `
+        <div class="card worksheet-card" onclick="openWorksheet('${w._id}')">
+          <div class="thumbnail">
+            ${w.thumbnailUrl ? `<img src="${w.thumbnailUrl}" alt="${w.title}">` : '<div class="placeholder">PDF/IMG</div>'}
+          </div>
+          <div class="body">
+            <h4>${w.title}</h4>
+            <div class="meta">
+              <span>by ${w.uploader?.username || '-'}</span>
+              <span>${w.views} views</span>
+            </div>
+            <div class="meta" style="margin-top:4px">
+              <span>${formatDate(w.createdAt)}</span>
+            </div>
+          </div>
+        </div>`).join('')
+            : '<p style="color:var(--text2);text-align:center;padding:40px;grid-column:1/-1;">아직 친구가 올린 인기 학습지가 없습니다.</p>';
+    } catch (e) { toast(e.message, 'error'); }
 }
 
-function renderFriendsList(list, type) {
-    $('friends-list').innerHTML = list.length
-        ? list.map(u => `
-      <div class="user-item">
-        <div class="avatar">${u.username.charAt(0).toUpperCase()}</div>
-        <div class="name">${u.username}</div>
-        <div class="pts">${u.points?.toLocaleString()} pt</div>
-        <button class="btn btn-danger btn-sm" onclick="unfollow('${u._id}')">언팔 (맞팔 취소)</button>
-      </div>`).join('')
-        : `<p style="color:var(--text2);font-size:.9rem">아직 서로 맞팔로우한 친구가 없습니다.</p>`;
-}
+
 
 async function follow(userId) {
     try {
@@ -495,20 +504,53 @@ async function unfollow(userId) {
 }
 
 // ─── CLASSMATES PAGE ───
-async function loadClassmates() {
+let currentClassmatesTab = 'all';
+
+function loadClassmates() {
+    document.querySelectorAll('#page-classmates .classmate-tab').forEach((t, i) => {
+        const tabType = ['all', 'following', 'followers'][i];
+        if (tabType === currentClassmatesTab) t.classList.add('active');
+        else t.classList.remove('active');
+    });
+    loadClassmatesList(currentClassmatesTab);
+}
+
+function showClassmatesTab(tab) {
+    currentClassmatesTab = tab;
+    document.querySelectorAll('#page-classmates .classmate-tab').forEach(t => t.classList.remove('active'));
+    event.target.classList.add('active');
+    loadClassmatesList(tab);
+}
+
+async function loadClassmatesList(tab) {
     try {
-        const users = await api('/api/users/classmates');
+        let endpoint = '/api/users/classmates';
+        let emptyMsg = '아직 다른 학우가 없습니다.';
+
+        if (tab === 'following') {
+            endpoint = '/api/follows/following';
+            emptyMsg = '팔로잉하는 학우가 없습니다.';
+        } else if (tab === 'followers') {
+            endpoint = '/api/follows/followers';
+            emptyMsg = '팔로워가 없습니다.';
+        }
+
+        const users = await api(endpoint);
+
         $('classmates-list').innerHTML = users.length
-            ? users.map(u => `
+            ? users.map(u => {
+                const isF = tab === 'following' ? true : u.isFollowing;
+                return `
           <div class="user-item">
             <div class="avatar">${u.username.charAt(0).toUpperCase()}</div>
             <div class="name">${u.username}</div>
             <div class="pts">${u.points?.toLocaleString()} pt</div>
-            ${u.isFollowing
-                    ? `<button class="btn btn-danger btn-sm" onclick="unfollow('${u._id}')">언팔로우</button>`
-                    : `<button class="btn btn-primary btn-sm" onclick="follow('${u._id}')">팔로우</button>`}
-          </div>`).join('')
-            : '<p style="color:var(--text2);font-size:.9rem;text-align:center;padding:20px">아직 다른 학우가 없습니다.</p>';
+            ${isF
+                        ? `<button class="btn btn-danger btn-sm" onclick="unfollow('${u._id}')">언팔로우</button>`
+                        : `<button class="btn btn-primary btn-sm" onclick="follow('${u._id}')">팔로우</button>`}
+          </div>`;
+            }).join('')
+            : `<p style="color:var(--text2);font-size:.9rem;text-align:center;padding:20px">${emptyMsg}</p>`;
     } catch (e) { toast(e.message, 'error'); }
 }
 

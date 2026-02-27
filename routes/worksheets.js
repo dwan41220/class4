@@ -7,6 +7,7 @@ const View = require('../models/View');
 const User = require('../models/User');
 const PointTransaction = require('../models/PointTransaction');
 const Config = require('../models/Config');
+const Follow = require('../models/Follow');
 const { authMiddleware } = require('../middleware/auth');
 const { uploadFile, uploadImage, cloudinary } = require('../config/cloudinary');
 const { drive, uploadToGoogleDrive } = require('../config/gdrive');
@@ -123,6 +124,30 @@ router.get('/', async (req, res) => {
             .populate('subject', 'name')
             .populate('uploader', 'username')
             .sort(sortOption);
+
+        res.json(worksheets);
+    } catch (err) {
+        res.status(500).json({ error: '서버 오류' });
+    }
+});
+
+// GET /api/worksheets/friends/best — 맞팔 친구들이 올린 인기 학습지 TOP
+router.get('/friends/best', authMiddleware, async (req, res) => {
+    try {
+        const myFollowings = await Follow.find({ follower: req.user.userId });
+        const followingIds = myFollowings.map(f => f.following);
+
+        const mutuals = await Follow.find({
+            follower: { $in: followingIds },
+            following: req.user.userId
+        });
+        const mutualIds = mutuals.map(f => f.follower);
+
+        const worksheets = await Worksheet.find({ uploader: { $in: mutualIds } })
+            .populate('subject', 'name')
+            .populate('uploader', 'username')
+            .sort({ views: -1 })
+            .limit(6);
 
         res.json(worksheets);
     } catch (err) {
