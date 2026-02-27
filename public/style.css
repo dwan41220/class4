@@ -430,7 +430,25 @@ select.form-input {
   background: var(--ig-gradient2);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  letter-spacing: -1px
+  letter-spacing: -1px;
+  display: flex;
+  align-items: center;
+  gap: 10px
+}
+
+.sidebar-logo-img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  -webkit-text-fill-color: initial
+}
+
+.mobile-logo-img {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+  vertical-align: middle;
+  margin-right: 6px
 }
 
 .sidebar-nav {
