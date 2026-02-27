@@ -624,7 +624,7 @@ async function checkGoogleDriveStatus() {
             disconnectBtn.style.display = 'none';
         }
     } catch (e) {
-        toast('구글 드라이브 상태를 가져오는데 실패했습니다.', 'error');
+        toast('구글 연동 상태 불러오기 실패: ' + e.message, 'error');
     }
 }
 
