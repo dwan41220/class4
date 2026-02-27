@@ -374,7 +374,7 @@ function backToSubjects() {
 
 async function downloadWorksheet(id, title) {
   try {
-    toast('다운로드 링크를 가져오는 중...', 'info');
+    toast('다운로드 준비 중...', 'info');
 
     const response = await fetch(`${API}/api/worksheets/${id}/download`, {
       headers: { 'Authorization': `Bearer ${token}` },
@@ -387,8 +387,26 @@ async function downloadWorksheet(id, title) {
     }
 
     if (data.url) {
-      window.open(data.url, '_blank');
-      toast('다운로드가 시작되었습니다.', 'success');
+      // Blob 다운로드: 모바일에서도 직접 저장 가능
+      try {
+        const fileRes = await fetch(data.url);
+        const blob = await fileRes.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        // 파일 확장자 추출
+        const ext = data.url.split('?')[0].split('.').pop() || 'file';
+        a.download = `${title}.${ext}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(blobUrl);
+        toast('다운로드 완료!', 'success');
+      } catch (blobErr) {
+        // Blob 실패 시 (CORS 등) fallback
+        window.open(data.url, '_blank');
+        toast('다운로드가 시작되었습니다.', 'success');
+      }
     } else {
       throw new Error('다운로드 URL을 찾을 수 없습니다.');
     }

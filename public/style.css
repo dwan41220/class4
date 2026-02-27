@@ -666,23 +666,26 @@ select.form-input {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
-  padding: 6px 10px;
+  gap: 3px;
+  padding: 8px 14px;
   color: var(--text2);
-  font-size: .65rem;
-  font-weight: 400;
+  font-size: .68rem;
+  font-weight: 500;
   cursor: pointer;
-  border-radius: 6px;
-  transition: .15s
+  border-radius: 12px;
+  transition: all .2s;
+  position: relative
 }
 
 .mobile-nav-item.active {
-  color: var(--text);
-  font-weight: 600
+  color: #fff;
+  font-weight: 700;
+  background: var(--ig-gradient);
+  box-shadow: 0 2px 8px rgba(131, 58, 180, .25)
 }
 
 .mobile-nav-item .icon {
-  font-size: 1.4rem
+  font-size: 1.5rem
 }
 
 .mobile-header {
