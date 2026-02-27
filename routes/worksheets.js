@@ -179,50 +179,14 @@ router.get('/:id/download', authMiddleware, async (req, res) => {
         const worksheet = await Worksheet.findById(req.params.id);
         if (!worksheet) return res.status(404).json({ error: '학습지를 찾을 수 없습니다.' });
 
-        let fileUrl = worksheet.fileUrl;
-
-
-
-        // 파일 확장자 추출
-        const urlPath = new URL(fileUrl).pathname;
-        const ext = urlPath.match(/\.(\w+)$/)?.[1] || 'pdf';
-        const safeName = worksheet.title.replace(/[^\w가-힣\s\-_.]/g, '') || 'download';
-        const fileName = `${safeName}.${ext}`;
-
-        // MIME 타입 매핑
-        const mimeTypes = {
-            'pdf': 'application/pdf',
-            'doc': 'application/msword',
-            'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            'png': 'image/png',
-            'jpg': 'image/jpeg',
-            'jpeg': 'image/jpeg',
-        };
-        const contentType = mimeTypes[ext.toLowerCase()] || 'application/octet-stream';
-
-        const response = await fetch(fileUrl, {
-            headers: {
-                'User-Agent': 'Node.js Proxy',
-                'Accept': '*/*, application/pdf'
-            }
-        });
-
-        if (!response.ok) {
-            const errText = await response.text();
-            return res.status(response.status).json({ error: `파일을 가져올 수 없습니다. (${response.status})`, details: errText });
+        if (!worksheet.fileUrl) {
+            return res.status(404).json({ error: '파일 URL이 존재하지 않습니다.' });
         }
 
-        res.setHeader('Content-Type', contentType);
-        res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(fileName)}`);
+        // Direct users straight to the Cloudinary/Google Drive link for downloading.
+        // This is much faster and saves server memory/bandwidth compared to proxying large ArrayBuffers.
+        res.json({ url: worksheet.fileUrl });
 
-        const contentLength = response.headers.get('content-length');
-        if (contentLength) {
-            res.setHeader('Content-Length', contentLength);
-        }
-
-        const arrayBuffer = await response.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
-        res.send(buffer);
     } catch (err) {
         console.error('Download error:', err);
         res.status(500).json({ error: '서버 오류' });

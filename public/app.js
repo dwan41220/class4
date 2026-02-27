@@ -373,38 +373,25 @@ function backToSubjects() {
 
 async function downloadWorksheet(id, title) {
     try {
-        toast('다운로드 준비 중...', 'info');
+        toast('다운로드 링크를 가져오는 중...', 'info');
 
-        // 서버 프록시를 통해 파일을 직접 받음
         const response = await fetch(`${API}/api/worksheets/${id}/download`, {
             headers: { 'Authorization': `Bearer ${token}` },
         });
 
+        const data = await response.json();
+
         if (!response.ok) {
-            const err = await response.json().catch(() => ({}));
-            throw new Error(err.error || '다운로드 실패');
+            throw new Error(data.error || '다운로드 링크 가져오기 실패');
         }
 
-        const blob = await response.blob();
-        const blobUrl = URL.createObjectURL(blob);
-
-        // Content-Disposition에서 파일명 추출 또는 title 사용
-        let fileName = title || 'download';
-        const cd = response.headers.get('Content-Disposition');
-        if (cd) {
-            const match = cd.match(/filename\*=UTF-8''(.+)/);
-            if (match) fileName = decodeURIComponent(match[1]);
+        if (data.url) {
+            window.open(data.url, '_blank');
+            toast('다운로드가 시작되었습니다.', 'success');
+        } else {
+            throw new Error('다운로드 URL을 찾을 수 없습니다.');
         }
 
-        const a = document.createElement('a');
-        a.href = blobUrl;
-        a.download = fileName;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        setTimeout(() => URL.revokeObjectURL(blobUrl), 3000);
-
-        toast('다운로드 완료!', 'success');
     } catch (e) { toast(e.message || '다운로드 실패', 'error'); }
 }
 
