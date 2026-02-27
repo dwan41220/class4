@@ -424,31 +424,61 @@ select.form-input {
 }
 
 .sidebar-logo {
-  padding: 28px 20px 20px;
-  font-size: 1.5rem;
-  font-weight: 800;
-  background: var(--ig-gradient2);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  letter-spacing: -1px;
+  padding: 24px 20px 16px;
   display: flex;
   align-items: center;
   gap: 10px
 }
 
 .sidebar-logo-img {
-  width: 32px;
-  height: 32px;
-  object-fit: contain;
-  -webkit-text-fill-color: initial
+  width: 34px;
+  height: 34px;
+  object-fit: contain
+}
+
+.logo-text {
+  display: flex;
+  flex-direction: column
+}
+
+.logo-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.35rem;
+  font-weight: 700;
+  background: var(--ig-gradient2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: -.5px;
+  line-height: 1.2
+}
+
+.logo-sub {
+  font-family: var(--font);
+  font-size: .6rem;
+  font-weight: 400;
+  color: var(--text2);
+  -webkit-text-fill-color: var(--text2);
+  letter-spacing: .5px;
+  margin-top: 1px;
+  font-style: italic
 }
 
 .mobile-logo-img {
-  width: 26px;
-  height: 26px;
+  width: 24px;
+  height: 24px;
   object-fit: contain;
   vertical-align: middle;
   margin-right: 6px
+}
+
+.mobile-header h1 .logo-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.15rem
+}
+
+.mobile-header h1 .logo-sub {
+  font-size: .55rem;
+  vertical-align: middle
 }
 
 .sidebar-nav {

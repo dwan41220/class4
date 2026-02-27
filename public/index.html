@@ -6,6 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>스마트 학습지 저장소</title>
   <meta name="description" content="학습지를 공유하고 포인트를 적립하는 스마트 저장소">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 
@@ -69,13 +71,23 @@
   <div id="dashboard" class="dashboard hidden">
     <!-- Mobile Header -->
     <div class="mobile-header flex items-center justify-between">
-      <h1><img src="/logo.png" alt="logo" class="mobile-logo-img">학습지 저장소</h1>
+      <h1>
+        <img src="/logo.png" alt="logo" class="mobile-logo-img">
+        <span class="logo-title">학습지 저장소</span>
+        <span class="logo-sub" style="margin-left:0">&nbsp;feat. 유준's class 4</span>
+      </h1>
       <span id="mobile-points" style="color:var(--accent2);font-weight:700;font-size:.9rem"></span>
     </div>
 
     <!-- Sidebar -->
     <aside class="sidebar">
-      <div class="sidebar-logo"><img src="/logo.png" alt="logo" class="sidebar-logo-img">학습지 저장소</div>
+      <div class="sidebar-logo">
+        <img src="/logo.png" alt="logo" class="sidebar-logo-img">
+        <div class="logo-text">
+          <span class="logo-title">학습지 저장소</span>
+          <span class="logo-sub">feat. 유준's class 4</span>
+        </div>
+      </div>
       <nav class="sidebar-nav">
         <div class="nav-item active" data-page="upload" onclick="navigateTo('upload')">
           업로드
