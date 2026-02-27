@@ -16,53 +16,75 @@
 
   <!-- AUTH PAGE -->
   <div id="auth-page" class="auth-page">
-    <div class="auth-card">
-      <h1>학습지 저장소</h1>
-      <p>학습지를 공유하고 포인트를 적립하세요!</p>
-      <div class="auth-tabs">
-        <button class="auth-tab active" onclick="switchAuthTab('user')">유저 로그인</button>
-        <button class="auth-tab" onclick="switchAuthTab('admin')">관리자</button>
-      </div>
-      <!-- User Login -->
-      <div id="user-auth-form">
-        <div class="form-group">
-          <label>계정 이름</label>
-          <input type="text" id="auth-username" class="form-input" placeholder="관리자가 만든 계정 이름 입력">
+    <div class="auth-wrapper">
+      <div class="auth-card">
+        <h1>학습지 저장소</h1>
+        <p>학습지를 공유하고 포인트를 적립하세요!</p>
+        <div class="auth-tabs">
+          <button class="auth-tab active" onclick="switchAuthTab('user')">유저 로그인</button>
+          <button class="auth-tab" onclick="switchAuthTab('admin')">관리자</button>
         </div>
-        <div id="password-section" class="hidden">
+        <!-- User Login -->
+        <div id="user-auth-form">
           <div class="form-group">
-            <label id="password-label">비밀번호</label>
-            <div class="pw-wrapper">
-              <input type="password" id="auth-password" class="form-input" placeholder="비밀번호 입력">
-              <button type="button" class="pw-toggle" onclick="togglePw('auth-password',this)">show</button>
+            <label>계정 이름</label>
+            <input type="text" id="auth-username" class="form-input" placeholder="관리자가 만든 계정 이름 입력">
+          </div>
+          <div id="password-section" class="hidden">
+            <div class="form-group">
+              <label id="password-label">비밀번호</label>
+              <div class="pw-wrapper">
+                <input type="password" id="auth-password" class="form-input" placeholder="비밀번호 입력">
+                <button type="button" class="pw-toggle" onclick="togglePw('auth-password',this)">show</button>
+              </div>
+            </div>
+            <div id="password-confirm-group" class="form-group hidden">
+              <label>비밀번호 확인</label>
+              <div class="pw-wrapper">
+                <input type="password" id="auth-password-confirm" class="form-input" placeholder="비밀번호 다시 입력">
+                <button type="button" class="pw-toggle" onclick="togglePw('auth-password-confirm',this)">show</button>
+              </div>
             </div>
           </div>
-          <div id="password-confirm-group" class="form-group hidden">
-            <label>비밀번호 확인</label>
-            <div class="pw-wrapper">
-              <input type="password" id="auth-password-confirm" class="form-input" placeholder="비밀번호 다시 입력">
-              <button type="button" class="pw-toggle" onclick="togglePw('auth-password-confirm',this)">show</button>
-            </div>
-          </div>
+          <button id="auth-next-btn" class="btn btn-primary btn-full" onclick="handleUserAuth()">다음</button>
         </div>
-        <button id="auth-next-btn" class="btn btn-primary btn-full" onclick="handleUserAuth()">다음</button>
+        <!-- Admin Login -->
+        <div id="admin-auth-form" class="hidden">
+          <div id="admin-status-msg" class="text-center" style="margin-bottom:16px;color:var(--text2);font-size:.9rem">
+          </div>
+          <div class="form-group">
+            <label>관리자 아이디</label>
+            <input type="text" id="admin-username" class="form-input" placeholder="관리자 아이디">
+          </div>
+          <div class="form-group">
+            <label>관리자 비밀번호</label>
+            <div class="pw-wrapper">
+              <input type="password" id="admin-password" class="form-input" placeholder="관리자 비밀번호">
+              <button type="button" class="pw-toggle" onclick="togglePw('admin-password',this)">show</button>
+            </div>
+          </div>
+          <button class="btn btn-primary btn-full" onclick="handleAdminAuth()">로그인</button>
+        </div>
       </div>
-      <!-- Admin Login -->
-      <div id="admin-auth-form" class="hidden">
-        <div id="admin-status-msg" class="text-center" style="margin-bottom:16px;color:var(--text2);font-size:.9rem">
-        </div>
-        <div class="form-group">
-          <label>관리자 아이디</label>
-          <input type="text" id="admin-username" class="form-input" placeholder="관리자 아이디">
-        </div>
-        <div class="form-group">
-          <label>관리자 비밀번호</label>
-          <div class="pw-wrapper">
-            <input type="password" id="admin-password" class="form-input" placeholder="관리자 비밀번호">
-            <button type="button" class="pw-toggle" onclick="togglePw('admin-password',this)">show</button>
+
+      <!-- 안내 메모 -->
+      <div class="auth-memo">
+        <div class="memo-title">로그인 안내</div>
+        <div class="memo-body">
+          <div class="memo-item">
+            <span class="memo-num">1</span>
+            <span>계정 이름에 <strong>이름 석 자</strong>를 입력하세요.<br><span class="memo-example">예: 홍길동</span></span>
+          </div>
+          <div class="memo-item">
+            <span class="memo-num">2</span>
+            <span>첫 로그인 시 <strong>비밀번호를 직접 설정</strong>하게 됩니다.</span>
+          </div>
+          <div class="memo-item">
+            <span class="memo-num">3</span>
+            <span>설정한 비밀번호는 <strong>꼭 기억</strong>해 주세요!</span>
           </div>
         </div>
-        <button class="btn btn-primary btn-full" onclick="handleAdminAuth()">로그인</button>
+        <div class="memo-footer">관리자가 먼저 계정을 만들어야 로그인이 가능합니다.</div>
       </div>
     </div>
   </div>
