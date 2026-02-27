@@ -338,6 +338,32 @@
           </table>
         </div>
       </div>
+      <!-- ADMIN SETTINGS PAGE -->
+      <div id="page-admin-settings" class="page hidden">
+        <div class="page-header">
+          <h2>시스템 설정</h2>
+          <p>외부 서비스 및 저장소 연동 관리</p>
+        </div>
+        <div class="card" style="max-width: 500px;">
+          <h3>구글 드라이브(대용량 보관소) 연동</h3>
+          <p style="color: #666; font-size: 0.9em; margin-bottom: 15px;">PDF나 한글 파일 등 10MB 이상의 대용량 학습지는 관리자의 구글 드라이브 계정에
+            저장됩니다.</p>
+          <div
+            style="background: #f9fafb; padding: 15px; border-radius: 8px; border: 1px solid #e5e7eb; display: flex; align-items: center; justify-content: space-between;">
+            <div>
+              <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px;">현재 상태</div>
+              <div id="gdrive-status-text" style="font-weight: 500; font-size: 15px;">상태 확인 중...</div>
+            </div>
+            <div>
+              <button class="btn btn-sm btn-primary" id="gdrive-connect-btn" style="display: none;"
+                onclick="connectGoogleDrive()">구글 계정 연동하기</button>
+              <button class="btn btn-sm" id="gdrive-disconnect-btn"
+                style="display: none; background: #fee2e2; color: #dc2626; border: 1px solid #fecaca;"
+                onclick="disconnectGoogleDrive()">연동 해제</button>
+            </div>
+          </div>
+        </div>
+      </div>
     </main>
   </div>
 
