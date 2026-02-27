@@ -382,10 +382,15 @@
       <div id="page-admin-users" class="page">
         <div class="page-header flex items-center justify-between">
           <div>
-            <h2>계정 관리</h2>
+            <h2>계정 관리 <span id="admin-user-count" style="font-size:.85rem;font-weight:400;color:var(--text2)"></span>
+            </h2>
             <p>계정 추가/삭제 및 포인트 관리</p>
           </div>
           <button class="btn btn-primary" onclick="openAddUserModal()">+ 계정 추가</button>
+        </div>
+        <div class="sort-tabs" style="margin-bottom:12px">
+          <button class="sort-tab active" onclick="sortAdminUsers('date',this)">추가순</button>
+          <button class="sort-tab" onclick="sortAdminUsers('name',this)">이름순</button>
         </div>
         <div class="card" style="overflow-x:auto">
           <table class="admin-table">

@@ -709,10 +709,32 @@ async function loadStorageInfo() {
   }
 }
 
+let adminUsersList = [];
+let adminUsersSort = 'date';
+
 async function loadAdminUsers() {
   try {
-    const users = await api('/api/admin/users', { admin: true });
-    $('admin-users-tbody').innerHTML = users.map(u => `
+    adminUsersList = await api('/api/admin/users', { admin: true });
+    $('admin-user-count').textContent = `(${adminUsersList.length}명)`;
+    renderAdminUsers();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+function sortAdminUsers(sort, btn) {
+  adminUsersSort = sort;
+  document.querySelectorAll('#page-admin-users .sort-tab').forEach(t => t.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderAdminUsers();
+}
+
+function renderAdminUsers() {
+  const sorted = [...adminUsersList];
+  if (adminUsersSort === 'name') {
+    sorted.sort((a, b) => a.username.localeCompare(b.username, 'ko'));
+  }
+  // 'date' = default server order (createdAt desc)
+
+  $('admin-users-tbody').innerHTML = sorted.map(u => `
       <tr>
         <td><strong>${u.username}</strong></td>
         <td><span class="badge ${u.isActivated ? 'badge-active' : 'badge-pending'}">${u.isActivated ? '활성' : '대기'}</span></td>
@@ -724,7 +746,6 @@ async function loadAdminUsers() {
           </div>
         </td>
       </tr>`).join('');
-  } catch (e) { toast(e.message, 'error'); }
 }
 
 function openAddUserModal() {
