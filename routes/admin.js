@@ -224,6 +224,38 @@ router.delete('/subjects/:id', adminMiddleware, async (req, res) => {
     }
 });
 
+// GET /api/admin/quizzes — 전체 퀴즈 목록 (관리자)
+router.get('/quizzes', adminMiddleware, async (req, res) => {
+    try {
+        const Quiz = require('../models/Quiz');
+        const quizzes = await Quiz.find()
+            .populate('creator', 'username')
+            .populate('subject', 'name')
+            .sort({ createdAt: -1 });
+        res.json(quizzes);
+    } catch (err) {
+        res.status(500).json({ error: '서버 오류' });
+    }
+});
+
+// DELETE /api/admin/quizzes/:id — 퀴즈 삭제 (관리자)
+router.delete('/quizzes/:id', adminMiddleware, async (req, res) => {
+    try {
+        const Quiz = require('../models/Quiz');
+        const QuizScore = require('../models/QuizScore');
+        const quiz = await Quiz.findById(req.params.id);
+        if (!quiz) return res.status(404).json({ error: '퀴즈를 찾을 수 없습니다.' });
+
+        await QuizScore.deleteMany({ quiz: quiz._id });
+        await Quiz.findByIdAndDelete(req.params.id);
+
+        res.json({ message: `퀴즈 "${quiz.title}" 및 관련 플레이 기록 삭제 완료!` });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: '서버 오류' });
+    }
+});
+
 // GET /api/admin/storage — 저장 공간 현황
 router.get('/storage', adminMiddleware, async (req, res) => {
     try {

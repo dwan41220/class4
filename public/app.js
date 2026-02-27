@@ -636,6 +636,7 @@ function adminNavigateTo(page) {
   if (page === 'admin-worksheets') loadAdminWorksheets();
   if (page === 'admin-subjects') loadAdminSubjects();
   if (page === 'admin-settings') { checkGoogleDriveStatus(); loadStorageInfo(); }
+  if (page === 'admin-quizzes') loadAdminQuizzes();
 }
 
 async function checkGoogleDriveStatus() {
@@ -725,6 +726,32 @@ async function loadStorageInfo() {
   } catch (e) {
     $('storage-info').innerHTML = '<span style="color:var(--danger)">저장 정보 로딩 실패</span>';
   }
+}
+
+async function loadAdminQuizzes() {
+  try {
+    const quizzes = await api('/api/admin/quizzes', { admin: true });
+    $('admin-quiz-count').textContent = `(${quizzes.length}개)`;
+    $('admin-quizzes-tbody').innerHTML = quizzes.map(q => `
+      <tr>
+        <td><strong>${q.title}</strong></td>
+        <td>${q.creator?.username || '(삭제됨)'}</td>
+        <td>${q.questions?.length || 0}문제</td>
+        <td>${q.playCount || 0}회</td>
+        <td>
+          <button class="btn btn-danger btn-sm" onclick="deleteAdminQuiz('${q._id}','${q.title}')">삭제</button>
+        </td>
+      </tr>`).join('');
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+async function deleteAdminQuiz(id, title) {
+  if (!confirm(`퀴즈 "${title}"를 삭제하시겠습니까? 관련 플레이 기록도 함께 삭제됩니다.`)) return;
+  try {
+    const data = await api(`/api/admin/quizzes/${id}`, { method: 'DELETE', admin: true });
+    toast(data.message, 'success');
+    loadAdminQuizzes();
+  } catch (e) { toast(e.message, 'error'); }
 }
 
 let adminUsersList = [];
