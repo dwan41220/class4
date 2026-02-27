@@ -14,11 +14,11 @@ function togglePw(inputId, btn) {
   const input = document.getElementById(inputId);
   if (input.type === 'password') {
     input.type = 'text';
-    btn.textContent = '🙈';
+    btn.textContent = 'hide';
     btn.classList.add('visible');
   } else {
     input.type = 'password';
-    btn.textContent = '👁';
+    btn.textContent = 'show';
     btn.classList.remove('visible');
   }
 }

@@ -32,14 +32,14 @@
             <label id="password-label">비밀번호</label>
             <div class="pw-wrapper">
               <input type="password" id="auth-password" class="form-input" placeholder="비밀번호 입력">
-              <button type="button" class="pw-toggle" onclick="togglePw('auth-password',this)">👁</button>
+              <button type="button" class="pw-toggle" onclick="togglePw('auth-password',this)">show</button>
             </div>
           </div>
           <div id="password-confirm-group" class="form-group hidden">
             <label>비밀번호 확인</label>
             <div class="pw-wrapper">
               <input type="password" id="auth-password-confirm" class="form-input" placeholder="비밀번호 다시 입력">
-              <button type="button" class="pw-toggle" onclick="togglePw('auth-password-confirm',this)">👁</button>
+              <button type="button" class="pw-toggle" onclick="togglePw('auth-password-confirm',this)">show</button>
             </div>
           </div>
         </div>
@@ -57,7 +57,7 @@
           <label>관리자 비밀번호</label>
           <div class="pw-wrapper">
             <input type="password" id="admin-password" class="form-input" placeholder="관리자 비밀번호">
-            <button type="button" class="pw-toggle" onclick="togglePw('admin-password',this)">👁</button>
+            <button type="button" class="pw-toggle" onclick="togglePw('admin-password',this)">show</button>
           </div>
         </div>
         <button class="btn btn-primary btn-full" onclick="handleAdminAuth()">로그인</button>
@@ -90,7 +90,7 @@
           학우들
         </div>
         <div class="nav-item" data-page="profile" onclick="navigateTo('profile')">
-          <span class="icon">👤</span> 계정
+          계정
         </div>
         <div class="nav-item" data-page="history" onclick="navigateTo('history')">
           포인트 기록
@@ -308,7 +308,7 @@
           학우
         </div>
         <div class="mobile-nav-item" data-page="profile" onclick="navigateTo('profile')">
-          <span class="icon">👤</span>계정
+          계정
         </div>
         <div class="mobile-nav-item" data-page="quiz" onclick="navigateTo('quiz')">
           퀴즈
