@@ -20,6 +20,7 @@ app.use('/api/worksheets', require('./routes/worksheets'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/follows', require('./routes/follows'));
 app.use('/api/points', require('./routes/points'));
+app.use('/api/quizzes', require('./routes/quizzes'));
 
 // SPA fallback
 app.get('/{*path}', (req, res) => {

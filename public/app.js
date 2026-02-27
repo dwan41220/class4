@@ -195,6 +195,7 @@ function navigateTo(page) {
     if (page === 'classmates') loadClassmates();
     if (page === 'history') loadHistory();
     if (page === 'upload') loadSubjectsForUpload();
+    if (page === 'quiz') loadQuizPage();
 }
 
 // ─── UPLOAD ───
@@ -838,6 +839,365 @@ async function deleteAdminSubject(id, name, count) {
         await api(`/api/admin/subjects/${id}`, { method: 'DELETE', admin: true });
         toast(`과목 "${name}" 삭제 완료!`, 'success');
         loadAdminSubjects();
+    } catch (e) { toast(e.message, 'error'); }
+}
+
+// ─── QUIZ ───
+let quizData = null;
+let quizQuestionIndex = 0;
+let quizScore = 0;
+let quizMode = '';
+let speedTimer = null;
+let speedTimeLeft = 30;
+let quizQuestionCount = 0;
+
+function loadQuizPage() {
+    showQuizMainTab('play');
+}
+
+function showQuizMainTab(tab) {
+    document.querySelectorAll('.quiz-main-tab').forEach(t => t.classList.remove('active'));
+    event?.target?.classList.add('active');
+    hide('quiz-play-section');
+    hide('quiz-create-section');
+    hide('quiz-leaderboard-section');
+    if (tab === 'play') { show('quiz-play-section'); loadQuizList(); }
+    if (tab === 'create') { show('quiz-create-section'); loadQuizSubjects(); initQuizForm(); }
+    if (tab === 'leaderboard') { show('quiz-leaderboard-section'); loadLeaderboard(); }
+}
+
+async function loadQuizList() {
+    try {
+        const quizzes = await api('/api/quizzes');
+        $('quiz-list').innerHTML = quizzes.length
+            ? quizzes.map(q => `
+        <div class="card" style="cursor:pointer" onclick="openQuizSelect('${q._id}')">
+          <div style="padding:16px">
+            <h4 style="margin-bottom:8px">${q.title}</h4>
+            <div style="color:var(--text2);font-size:.85rem">
+              <span>${q.questions.length}문제</span> ·
+              <span>by ${q.creator?.username || '-'}</span> ·
+              <span>${q.playCount}회 플레이</span>
+            </div>
+            ${q.subject ? `<span style="display:inline-block;margin-top:8px;padding:2px 8px;background:var(--accent);color:white;border-radius:12px;font-size:.75rem">${q.subject.name}</span>` : ''}
+          </div>
+        </div>`).join('')
+            : '<p style="color:var(--text2);text-align:center;padding:40px;grid-column:1/-1">아직 퀴즈가 없습니다. 퀴즈를 만들어보세요!</p>';
+    } catch (e) { toast(e.message, 'error'); }
+}
+
+async function loadQuizSubjects() {
+    try {
+        const subjects = await api('/api/subjects');
+        $('quiz-subject').innerHTML = '<option value="">과목 없음</option>' +
+            subjects.map(s => `<option value="${s._id}">${s.name}</option>`).join('');
+    } catch (e) { }
+}
+
+function initQuizForm() {
+    $('quiz-title').value = '';
+    $('quiz-questions-container').innerHTML = '<h3 style="margin-bottom:12px">문제 목록</h3>';
+    addQuizQuestion();
+    addQuizQuestion();
+}
+
+function addQuizQuestion() {
+    const container = $('quiz-questions-container');
+    const idx = container.querySelectorAll('.quiz-q-block').length;
+    const div = document.createElement('div');
+    div.className = 'quiz-q-block card';
+    div.style.cssText = 'margin-bottom:12px;padding:16px';
+    div.innerHTML = `
+      <div class="flex items-center justify-between" style="margin-bottom:8px">
+        <strong>문제 ${idx + 1}</strong>
+        <button class="btn btn-danger btn-sm" onclick="this.closest('.quiz-q-block').remove()" style="font-size:.75rem">삭제</button>
+      </div>
+      <div class="form-group">
+        <input type="text" class="form-input qq-question" placeholder="질문을 입력하세요">
+      </div>
+      <div class="form-group">
+        <input type="text" class="form-input qq-choice" placeholder="보기 1">
+      </div>
+      <div class="form-group">
+        <input type="text" class="form-input qq-choice" placeholder="보기 2">
+      </div>
+      <div class="form-group">
+        <input type="text" class="form-input qq-choice" placeholder="보기 3">
+      </div>
+      <div class="form-group">
+        <input type="text" class="form-input qq-choice" placeholder="보기 4">
+      </div>
+      <div class="form-group">
+        <label>정답 번호 (1~4)</label>
+        <input type="number" class="form-input qq-answer" min="1" max="4" placeholder="예: 2">
+      </div>`;
+    container.appendChild(div);
+}
+
+async function submitQuiz() {
+    const title = $('quiz-title').value.trim();
+    const subject = $('quiz-subject').value;
+    if (!title) return toast('퀴즈 제목을 입력하세요.', 'error');
+
+    const blocks = document.querySelectorAll('.quiz-q-block');
+    if (blocks.length < 2) return toast('최소 2개 이상의 문제가 필요합니다.', 'error');
+
+    const questions = [];
+    for (const block of blocks) {
+        const question = block.querySelector('.qq-question').value.trim();
+        const choices = [...block.querySelectorAll('.qq-choice')].map(c => c.value.trim()).filter(Boolean);
+        const answerIndex = parseInt(block.querySelector('.qq-answer').value) - 1;
+        if (!question) return toast('빈 질문이 있습니다.', 'error');
+        if (choices.length < 2) return toast(`"${question}" 문제에 보기가 2개 이상 필요합니다.`, 'error');
+        if (isNaN(answerIndex) || answerIndex < 0 || answerIndex >= choices.length) return toast(`"${question}" 문제의 정답 번호가 유효하지 않습니다.`, 'error');
+        questions.push({ question, choices, answerIndex });
+    }
+
+    try {
+        await api('/api/quizzes', { method: 'POST', body: { title, subject: subject || undefined, questions } });
+        toast('퀴즈 업로드 완료!', 'success');
+        showQuizMainTab('play');
+        // re-highlight correct tab
+        document.querySelectorAll('.quiz-main-tab').forEach((t, i) => {
+            t.classList.toggle('active', i === 0);
+        });
+    } catch (e) { toast(e.message, 'error'); }
+}
+
+// ─── 퀴즈 선택 모달 ───
+function openQuizSelect(id) {
+    const html = `
+    <div class="modal-overlay" onclick="closeModal(event)">
+      <div class="modal" onclick="event.stopPropagation()">
+        <h2>게임 모드 선택</h2>
+        <p style="color:var(--text2);margin-bottom:20px">원하는 모드를 선택하세요</p>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <button class="btn btn-primary" style="justify-content:center" onclick="closeModal();startQuizGame('${id}','quiz')">📝 일반 퀴즈</button>
+          <button class="btn btn-primary" style="justify-content:center;background:#10b981" onclick="closeModal();startQuizGame('${id}','match')">🔗 매칭 게임</button>
+          <button class="btn btn-primary" style="justify-content:center;background:#f59e0b" onclick="closeModal();startQuizGame('${id}','speed')">⚡ 스피드 퀴즈</button>
+        </div>
+        <button class="btn btn-secondary" style="margin-top:12px;width:100%;justify-content:center" onclick="closeModal()">취소</button>
+      </div>
+    </div>`;
+    $('modal-container').innerHTML = html;
+    show('modal-container');
+}
+
+async function startQuizGame(id, mode) {
+    try {
+        quizData = await api(`/api/quizzes/${id}`);
+        quizMode = mode;
+        quizScore = 0;
+        quizQuestionIndex = 0;
+        $('quiz-game-title').textContent = quizData.title;
+        show('quiz-game-container');
+
+        if (mode === 'quiz') renderStandardQuiz();
+        else if (mode === 'match') renderMatchGame();
+        else if (mode === 'speed') renderSpeedQuiz();
+    } catch (e) { toast(e.message, 'error'); }
+}
+
+function exitQuizGame() {
+    hide('quiz-game-container');
+    if (speedTimer) clearInterval(speedTimer);
+    speedTimer = null;
+    quizData = null;
+}
+
+// ─── 모드 1: 일반 퀴즈 ───
+function renderStandardQuiz() {
+    const q = quizData.questions[quizQuestionIndex];
+    if (!q) return showQuizResult();
+    const total = quizData.questions.length;
+    $('quiz-game-area').innerHTML = `
+      <div class="card" style="padding:24px">
+        <div style="color:var(--text2);margin-bottom:8px;font-size:.85rem">문제 ${quizQuestionIndex + 1} / ${total}</div>
+        <h3 style="margin-bottom:20px;font-size:1.1rem">${q.question}</h3>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          ${q.choices.map((c, i) => `
+            <button class="btn btn-secondary" style="justify-content:flex-start;padding:12px 16px;font-size:1rem" 
+              onclick="checkStandardAnswer(${i}, ${q.answerIndex})">
+              <span style="font-weight:700;margin-right:10px;color:var(--accent)">${i + 1}</span> ${c}
+            </button>`).join('')}
+        </div>
+        <div style="margin-top:16px;text-align:right;color:var(--accent);font-weight:700">현재 점수: ${quizScore}점</div>
+      </div>`;
+}
+
+function checkStandardAnswer(selected, correct) {
+    const buttons = $('quiz-game-area').querySelectorAll('button');
+    buttons.forEach((btn, i) => {
+        btn.disabled = true;
+        if (i === correct) btn.style.background = '#bbf7d0';
+        else if (i === selected && selected !== correct) btn.style.background = '#fecaca';
+    });
+    if (selected === correct) quizScore += 100;
+
+    setTimeout(() => {
+        quizQuestionIndex++;
+        renderStandardQuiz();
+    }, 1000);
+}
+
+// ─── 모드 2: 매칭 게임 ───
+let matchSelected = null;
+let matchPairs = [];
+let matchMatched = 0;
+let matchStartTime = 0;
+
+function renderMatchGame() {
+    const questions = quizData.questions.slice(0, 6); // max 6 for matching
+    matchPairs = questions.map((q, i) => ({ id: i, question: q.question, answer: q.choices[q.answerIndex] }));
+    matchMatched = 0;
+    matchSelected = null;
+    matchStartTime = Date.now();
+
+    const shuffledAnswers = [...matchPairs].sort(() => Math.random() - 0.5);
+
+    $('quiz-game-area').innerHTML = `
+      <p style="color:var(--text2);margin-bottom:16px">왼쪽 문제를 누른 후 오른쪽 정답을 매칭하세요!</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div id="match-left" style="display:flex;flex-direction:column;gap:8px">
+          ${matchPairs.map(p => `
+            <button class="btn btn-secondary match-q" data-id="${p.id}" 
+              style="text-align:left;padding:10px 14px;font-size:.9rem;min-height:48px;white-space:normal"
+              onclick="selectMatchQuestion(${p.id})">Q. ${p.question}</button>`).join('')}
+        </div>
+        <div id="match-right" style="display:flex;flex-direction:column;gap:8px">
+          ${shuffledAnswers.map(p => `
+            <button class="btn btn-secondary match-a" data-id="${p.id}" 
+              style="text-align:left;padding:10px 14px;font-size:.9rem;min-height:48px;white-space:normal"
+              onclick="selectMatchAnswer(${p.id})">A. ${p.answer}</button>`).join('')}
+        </div>
+      </div>
+      <div id="match-timer" style="margin-top:16px;text-align:center;color:var(--accent);font-weight:700">⏱️ 매칭 중...</div>`;
+}
+
+function selectMatchQuestion(id) {
+    document.querySelectorAll('.match-q').forEach(b => b.style.outline = 'none');
+    const btn = document.querySelector(`.match-q[data-id="${id}"]`);
+    if (btn && !btn.disabled) {
+        btn.style.outline = '3px solid var(--accent)';
+        matchSelected = id;
+    }
+}
+
+function selectMatchAnswer(id) {
+    if (matchSelected === null) return toast('먼저 왼쪽 문제를 선택하세요!', 'error');
+    const qBtn = document.querySelector(`.match-q[data-id="${matchSelected}"]`);
+    const aBtn = document.querySelector(`.match-a[data-id="${id}"]`);
+
+    if (matchSelected === id) {
+        // correct match!
+        qBtn.style.background = '#bbf7d0'; qBtn.disabled = true; qBtn.style.outline = 'none';
+        aBtn.style.background = '#bbf7d0'; aBtn.disabled = true;
+        matchMatched++;
+        matchSelected = null;
+
+        if (matchMatched === matchPairs.length) {
+            const elapsed = ((Date.now() - matchStartTime) / 1000).toFixed(1);
+            quizScore = Math.max(100, Math.round(1000 - (elapsed * 10)));
+            $('match-timer').innerHTML = `✅ 완료! ${elapsed}초 — ${quizScore}점`;
+            setTimeout(() => showQuizResult(), 1500);
+        }
+    } else {
+        // wrong
+        aBtn.style.background = '#fecaca';
+        setTimeout(() => { aBtn.style.background = ''; }, 500);
+        matchSelected = null;
+        document.querySelectorAll('.match-q').forEach(b => b.style.outline = 'none');
+    }
+}
+
+// ─── 모드 3: 스피드 퀴즈 ───
+function renderSpeedQuiz() {
+    quizQuestionIndex = 0;
+    quizScore = 0;
+    speedTimeLeft = 30;
+    quizQuestionCount = quizData.questions.length;
+
+    renderSpeedQuestion();
+    if (speedTimer) clearInterval(speedTimer);
+    speedTimer = setInterval(() => {
+        speedTimeLeft--;
+        const timerEl = document.getElementById('speed-timer');
+        if (timerEl) timerEl.textContent = `⏱️ ${speedTimeLeft}초`;
+        if (speedTimeLeft <= 0) {
+            clearInterval(speedTimer);
+            speedTimer = null;
+            showQuizResult();
+        }
+    }, 1000);
+}
+
+function renderSpeedQuestion() {
+    if (quizQuestionIndex >= quizQuestionCount) {
+        if (speedTimer) clearInterval(speedTimer);
+        speedTimer = null;
+        return showQuizResult();
+    }
+    const q = quizData.questions[quizQuestionIndex];
+    $('quiz-game-area').innerHTML = `
+      <div class="card" style="padding:24px">
+        <div class="flex items-center justify-between" style="margin-bottom:12px">
+          <span style="color:var(--text2);font-size:.85rem">${quizQuestionIndex + 1} / ${quizQuestionCount}</span>
+          <span id="speed-timer" style="font-weight:700;color:#f59e0b;font-size:1.2rem">⏱️ ${speedTimeLeft}초</span>
+        </div>
+        <h3 style="margin-bottom:16px;font-size:1.1rem">${q.question}</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          ${q.choices.map((c, i) => `
+            <button class="btn btn-secondary" style="justify-content:center;padding:14px;font-size:.95rem;white-space:normal" 
+              onclick="checkSpeedAnswer(${i}, ${q.answerIndex})">${c}</button>`).join('')}
+        </div>
+        <div style="margin-top:16px;text-align:center;font-weight:700;color:var(--accent);font-size:1.1rem">${quizScore}점</div>
+      </div>`;
+}
+
+function checkSpeedAnswer(selected, correct) {
+    if (selected === correct) {
+        quizScore += 100;
+        toast('✔️ 정답! +100', 'success');
+    } else {
+        quizScore = Math.max(0, quizScore - 50);
+        toast('❌ 오답! -50', 'error');
+    }
+    quizQuestionIndex++;
+    renderSpeedQuestion();
+}
+
+// ─── 결과 화면 & 점수 제출 ───
+async function showQuizResult() {
+    try {
+        await api(`/api/quizzes/${quizData._id}/score`, { method: 'POST', body: { score: quizScore, mode: quizMode } });
+    } catch (e) { }
+
+    const modeNames = { quiz: '일반 퀴즈', match: '매칭 게임', speed: '스피드 퀴즈' };
+    $('quiz-game-area').innerHTML = `
+      <div class="card" style="padding:32px;text-align:center">
+        <h2 style="margin-bottom:8px">게임 종료!</h2>
+        <p style="color:var(--text2);margin-bottom:20px">${modeNames[quizMode]}</p>
+        <div style="font-size:3rem;font-weight:800;color:var(--accent);margin-bottom:8px">${quizScore}점</div>
+        <p style="color:var(--text2);margin-bottom:24px">업로더에게 100pt가 지급되었습니다!</p>
+        <div class="flex gap-sm" style="justify-content:center">
+          <button class="btn btn-primary" onclick="startQuizGame('${quizData._id}', '${quizMode}')">다시 하기</button>
+          <button class="btn btn-secondary" onclick="exitQuizGame()">나가기</button>
+        </div>
+      </div>`;
+}
+
+// ─── 주간 리더보드 ───
+async function loadLeaderboard() {
+    try {
+        const data = await api('/api/quizzes/leaderboard/weekly');
+        $('leaderboard-list').innerHTML = data.length
+            ? data.map((u, i) => `
+          <div class="user-item">
+            <div class="avatar" style="${i === 0 ? 'background:linear-gradient(135deg,#f59e0b,#ef4444);color:white' : ''}">${i === 0 ? '🏆' : i + 1}</div>
+            <div class="name">${u.username}</div>
+            <div class="pts">${u.totalScore.toLocaleString()}점 (${u.gamesPlayed}판)</div>
+          </div>`).join('')
+            : '<p style="color:var(--text2);text-align:center;padding:20px">이번 주 기록이 없습니다.</p>';
     } catch (e) { toast(e.message, 'error'); }
 }
 

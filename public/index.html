@@ -95,6 +95,9 @@
         <div class="nav-item" data-page="history" onclick="navigateTo('history')">
           포인트 기록
         </div>
+        <div class="nav-item" data-page="quiz" onclick="navigateTo('quiz')">
+          퀴즈
+        </div>
       </nav>
       <div class="sidebar-footer">
         <div class="sidebar-user">
@@ -227,6 +230,66 @@
         </div>
         <div id="history-list"></div>
       </div>
+
+      <!-- QUIZ PAGE -->
+      <div id="page-quiz" class="page hidden">
+        <div class="page-header">
+          <h2>퀴즈</h2>
+          <p>퀴즈를 풀거나 직접 만들어보세요</p>
+        </div>
+
+        <div class="flex gap-sm" style="margin-bottom:16px">
+          <button class="quiz-main-tab sort-tab active" onclick="showQuizMainTab('play')">퀴즈 풀기</button>
+          <button class="quiz-main-tab sort-tab" onclick="showQuizMainTab('create')">퀴즈 만들기</button>
+          <button class="quiz-main-tab sort-tab" onclick="showQuizMainTab('leaderboard')">주간 랭킹</button>
+        </div>
+
+        <!-- 퀴즈 풀기 섹션 -->
+        <div id="quiz-play-section">
+          <div id="quiz-list" class="card-grid"></div>
+        </div>
+
+        <!-- 퀴즈 만들기 섹션 -->
+        <div id="quiz-create-section" class="hidden">
+          <div class="card" style="max-width:600px">
+            <div class="form-group">
+              <label>퀴즈 제목</label>
+              <input type="text" id="quiz-title" class="form-input" placeholder="예: 2학기 중간 영어 단어">
+            </div>
+            <div class="form-group">
+              <label>과목 (선택)</label>
+              <select id="quiz-subject" class="form-input"></select>
+            </div>
+            <div id="quiz-questions-container">
+              <h3 style="margin-bottom:12px">문제 목록</h3>
+            </div>
+            <button class="btn btn-secondary btn-sm" style="margin-bottom:16px" onclick="addQuizQuestion()">+ 문제
+              추가</button>
+            <button class="btn btn-primary btn-full" onclick="submitQuiz()">퀴즈 업로드</button>
+          </div>
+        </div>
+
+        <!-- 주간 랭킹 섹션 -->
+        <div id="quiz-leaderboard-section" class="hidden">
+          <div class="card" style="max-width:500px">
+            <h3 style="margin-bottom:16px">🏆 이번 주 퀴즈 랭킹 TOP 10</h3>
+            <p style="font-size:.8rem;color:var(--text2);margin-bottom:16px">1등에게는 매주 1000pt가 지급됩니다!</p>
+            <div id="leaderboard-list" class="user-list"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- QUIZ GAME MODAL -->
+      <div id="quiz-game-container" class="hidden"
+        style="position:fixed;inset:0;z-index:1000;background:var(--bg);overflow-y:auto;padding:20px">
+        <div style="max-width:700px;margin:0 auto">
+          <div class="flex items-center justify-between" style="margin-bottom:20px">
+            <h2 id="quiz-game-title"></h2>
+            <button class="btn btn-secondary btn-sm" onclick="exitQuizGame()">나가기</button>
+          </div>
+          <div id="quiz-game-area"></div>
+        </div>
+      </div>
     </main>
 
     <!-- Mobile Nav -->
@@ -246,6 +309,9 @@
         </div>
         <div class="mobile-nav-item" data-page="profile" onclick="navigateTo('profile')">
           <span class="icon">👤</span>계정
+        </div>
+        <div class="mobile-nav-item" data-page="quiz" onclick="navigateTo('quiz')">
+          퀴즈
         </div>
       </div>
     </nav>
