@@ -453,21 +453,14 @@ async function loadProfile() {
 
 // ─── FRIENDS PAGE ───
 function loadFriendsPage() {
-    loadFollowing();
+    loadMutualFriends();
     loadTransferList();
 }
 
-async function loadFollowing() {
+async function loadMutualFriends() {
     try {
-        const data = await api('/api/follows/following');
-        renderFriendsList(data, 'following');
-    } catch (e) { }
-}
-
-async function loadFollowers() {
-    try {
-        const data = await api('/api/follows/followers');
-        renderFriendsList(data, 'followers');
+        const data = await api('/api/follows/mutual');
+        renderFriendsList(data, 'mutual');
     } catch (e) { }
 }
 
@@ -478,17 +471,9 @@ function renderFriendsList(list, type) {
         <div class="avatar">${u.username.charAt(0).toUpperCase()}</div>
         <div class="name">${u.username}</div>
         <div class="pts">${u.points?.toLocaleString()} pt</div>
-        ${type === 'following'
-                ? `<button class="btn btn-danger btn-sm" onclick="unfollow('${u._id}')">언팔</button>`
-                : `<button class="btn btn-primary btn-sm" onclick="follow('${u._id}')">팔로우</button>`}
+        <button class="btn btn-danger btn-sm" onclick="unfollow('${u._id}')">언팔 (맞팔 취소)</button>
       </div>`).join('')
-        : `<p style="color:var(--text2);font-size:.9rem">${type === 'following' ? '팔로잉이 없습니다.' : '팔로워가 없습니다.'}</p>`;
-}
-
-function showFriendsTab(tab) {
-    document.querySelectorAll('#page-friends .sort-tab').forEach(t => t.classList.remove('active'));
-    event.target.classList.add('active');
-    if (tab === 'following') loadFollowing(); else loadFollowers();
+        : `<p style="color:var(--text2);font-size:.9rem">아직 서로 맞팔로우한 친구가 없습니다.</p>`;
 }
 
 async function follow(userId) {
@@ -529,7 +514,7 @@ async function loadClassmates() {
 
 async function loadTransferList() {
     try {
-        const data = await api('/api/follows/following');
+        const data = await api('/api/follows/mutual');
         $('transfer-to').innerHTML = '<option value="">친구를 선택하세요</option>' +
             data.map(u => `<option value="${u._id}">${u.username}</option>`).join('');
     } catch (e) { }

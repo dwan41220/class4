@@ -53,4 +53,24 @@ router.get('/following', authMiddleware, async (req, res) => {
     }
 });
 
+// GET /api/follows/mutual — 서로 맞팔로우(Mutual) 중인 친구 목록
+router.get('/mutual', authMiddleware, async (req, res) => {
+    try {
+        // 1. 내가 팔로우하는 사람들의 ID 목록
+        const myFollowings = await Follow.find({ follower: req.user.userId });
+        const followingIds = myFollowings.map(f => f.following);
+
+        // 2. 그 중에서 나를 팔로우하는 사람들 필터링 (맞팔)
+        const mutuals = await Follow.find({
+            follower: { $in: followingIds },
+            following: req.user.userId
+        }).populate('follower', 'username points');
+
+        // 맞팔 친구들의 User 객체 목록 반환
+        res.json(mutuals.map(f => f.follower));
+    } catch (err) {
+        res.status(500).json({ error: '서버 오류' });
+    }
+});
+
 module.exports = router;
