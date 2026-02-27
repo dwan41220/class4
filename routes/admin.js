@@ -11,6 +11,79 @@ const { cloudinary } = require('../config/cloudinary');
 const { deleteFromGoogleDrive, getAuthUrl, getOAuth2Client } = require('../config/gdrive');
 const jwt = require('jsonwebtoken');
 
+// ==========================================
+// GOOGLE DRIVE OAUTH ROUTES
+// (Must be at the top to avoid /:id route collisions)
+// ==========================================
+
+// GET /api/admin/gdrive/auth — 구글 로그인을 위한 OAuth URL 반환
+router.get('/gdrive/auth', adminMiddleware, (req, res) => {
+    // Pass the raw admin token in state so the callback can verify it
+    const token = req.headers.authorization?.split(' ')[1];
+    const url = getAuthUrl(token);
+    if (!url) {
+        return res.status(500).json({ error: 'Google OAuth 환경변수가 누락되었습니다.' });
+    }
+    res.json({ url });
+});
+
+// GET /api/admin/gdrive/callback — 구글 로그인 후 리다이렉트 콜백
+router.get('/gdrive/callback', async (req, res) => {
+    try {
+        const { code, state, error } = req.query;
+        if (error) return res.send(`구글 로그인 실패: ${error}`);
+
+        // Verify that the person who clicked login is our admin by checking the state JWT
+        try {
+            const decoded = jwt.verify(state, process.env.JWT_SECRET);
+            if (!decoded.isAdmin) throw new Error('Not admin');
+        } catch (e) {
+            return res.status(403).send('관리자 권한 인증에 실패했습니다.');
+        }
+
+        const oauth2Client = getOAuth2Client();
+        const { tokens } = await oauth2Client.getToken(code);
+
+        // Save tokens to DB securely
+        await Config.findOneAndUpdate(
+            { key: 'gdrive_tokens' },
+            { value: tokens },
+            { upsert: true }
+        );
+
+        // Redirect back to home (the frontend will reload and see the connected status)
+        res.redirect('/');
+    } catch (err) {
+        console.error('Google Callback Error:', err);
+        res.status(500).send('콜백 처리 중 오류가 발생했습니다.');
+    }
+});
+
+// GET /api/admin/gdrive/status — 현재 구글 드라이브 연동 상태 확인
+router.get('/gdrive/status', adminMiddleware, async (req, res) => {
+    try {
+        const config = await Config.findOne({ key: 'gdrive_tokens' });
+        res.json({ connected: !!config });
+    } catch (err) {
+        console.error('Status check error:', err);
+        res.status(500).json({ error: '서버 오류' });
+    }
+});
+
+// DELETE /api/admin/gdrive/disconnect — 구글 드라이브 연동 끊기
+router.delete('/gdrive/disconnect', adminMiddleware, async (req, res) => {
+    try {
+        await Config.findOneAndDelete({ key: 'gdrive_tokens' });
+        res.json({ message: '연동이 안전하게 해제되었습니다.' });
+    } catch (err) {
+        res.status(500).json({ error: '서버 오류' });
+    }
+});
+
+// ==========================================
+// ADMIN DASHBOARD ROUTES
+// ==========================================
+
 // POST /api/admin/users — 새 계정 생성 (이름만)
 router.post('/users', adminMiddleware, async (req, res) => {
     try {
@@ -147,69 +220,6 @@ router.delete('/subjects/:id', adminMiddleware, async (req, res) => {
         res.json({ message: `과목 "${subject.name}" 및 포함된 학습지 모두 삭제 완료!` });
     } catch (err) {
         console.error(err);
-        res.status(500).json({ error: '서버 오류' });
-    }
-});
-
-// GET /api/admin/gdrive/auth — 구글 로그인을 위한 OAuth URL 반환
-router.get('/gdrive/auth', adminMiddleware, (req, res) => {
-    // Pass the raw admin token in state so the callback can verify it
-    const token = req.headers.authorization?.split(' ')[1];
-    const url = getAuthUrl(token);
-    if (!url) {
-        return res.status(500).json({ error: 'Google OAuth 환경변수가 누락되었습니다.' });
-    }
-    res.json({ url });
-});
-
-// GET /api/admin/gdrive/callback — 구글 로그인 후 리다이렉트 콜백
-router.get('/gdrive/callback', async (req, res) => {
-    try {
-        const { code, state, error } = req.query;
-        if (error) return res.send(`구글 로그인 실패: ${error}`);
-
-        // Verify that the person who clicked login is our admin by checking the state JWT
-        try {
-            const decoded = jwt.verify(state, process.env.JWT_SECRET);
-            if (!decoded.isAdmin) throw new Error('Not admin');
-        } catch (e) {
-            return res.status(403).send('관리자 권한 인증에 실패했습니다.');
-        }
-
-        const oauth2Client = getOAuth2Client();
-        const { tokens } = await oauth2Client.getToken(code);
-
-        // Save tokens to DB securely
-        await Config.findOneAndUpdate(
-            { key: 'gdrive_tokens' },
-            { value: tokens },
-            { upsert: true }
-        );
-
-        // Redirect back to home (the frontend will reload and see the connected status)
-        res.redirect('/');
-    } catch (err) {
-        console.error('Google Callback Error:', err);
-        res.status(500).send('콜백 처리 중 오류가 발생했습니다.');
-    }
-});
-
-// GET /api/admin/gdrive/status — 현재 구글 드라이브 연동 상태 확인
-router.get('/gdrive/status', adminMiddleware, async (req, res) => {
-    try {
-        const config = await Config.findOne({ key: 'gdrive_tokens' });
-        res.json({ connected: !!config });
-    } catch (err) {
-        res.status(500).json({ error: '서버 오류' });
-    }
-});
-
-// DELETE /api/admin/gdrive/disconnect — 구글 드라이브 연동 끊기
-router.delete('/gdrive/disconnect', adminMiddleware, async (req, res) => {
-    try {
-        await Config.findOneAndDelete({ key: 'gdrive_tokens' });
-        res.json({ message: '연동이 안전하게 해제되었습니다.' });
-    } catch (err) {
         res.status(500).json({ error: '서버 오류' });
     }
 });
