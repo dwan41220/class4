@@ -1278,10 +1278,24 @@ async function startQuizGame(id, mode) {
 
     quizData = await api(`/api/quizzes/${id}`);
 
-    // Shuffle and slice questions
-    const shuffled = [...quizData.questions].sort(() => Math.random() - 0.5);
+    // 1. Shuffle questions
+    let shuffled = [...quizData.questions].sort(() => Math.random() - 0.5);
     const finalCount = (requestedCount > 0 && requestedCount <= shuffled.length) ? requestedCount : shuffled.length;
-    quizData.questions = shuffled.slice(0, finalCount);
+    shuffled = shuffled.slice(0, finalCount);
+
+    // 2. Shuffle choices for each question
+    shuffled.forEach(q => {
+      const originalChoices = [...q.choices];
+      const correctChoice = originalChoices[q.answerIndex];
+
+      // Shuffle choices
+      q.choices.sort(() => Math.random() - 0.5);
+
+      // Update answerIndex
+      q.answerIndex = q.choices.indexOf(correctChoice);
+    });
+
+    quizData.questions = shuffled;
 
     quizMode = mode;
     quizScore = 0;
