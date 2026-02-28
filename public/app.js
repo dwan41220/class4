@@ -1015,7 +1015,7 @@ async function loadQuizList() {
     const quizzes = await api('/api/quizzes');
     $('quiz-list').innerHTML = quizzes.length
       ? quizzes.map(q => `
-        <div class="card" style="cursor:pointer" onclick="openQuizSelect('${q._id}')">
+        <div class="card" style="cursor:pointer" onclick="openQuizSelect('${q._id}', ${q.questions.length})">
           <div style="padding:16px">
             <h4 style="margin-bottom:8px">${q.title}</h4>
             <div style="color:var(--text2);font-size:.85rem">
@@ -1059,23 +1059,45 @@ function addQuizQuestion() {
       <div class="form-group">
         <input type="text" class="form-input qq-question" placeholder="질문을 입력하세요">
       </div>
-      <div class="form-group">
-        <input type="text" class="form-input qq-choice" placeholder="보기 1">
+      <div class="qq-choices-container">
+        <!-- Choices will be added here -->
       </div>
+      <button class="btn btn-secondary btn-sm" style="margin-bottom:12px;font-size:.75rem" onclick="addChoiceToQuestion(this)">+ 선택지 추가</button>
       <div class="form-group">
-        <input type="text" class="form-input qq-choice" placeholder="보기 2">
-      </div>
-      <div class="form-group">
-        <input type="text" class="form-input qq-choice" placeholder="보기 3">
-      </div>
-      <div class="form-group">
-        <input type="text" class="form-input qq-choice" placeholder="보기 4">
-      </div>
-      <div class="form-group">
-        <label>정답 번호 (1~4)</label>
-        <input type="number" class="form-input qq-answer" min="1" max="4" placeholder="예: 2">
+        <label>정답 번호 (1부터 시작)</label>
+        <input type="number" class="form-input qq-answer" min="1" value="1">
       </div>`;
   container.appendChild(div);
+  const choicesContainer = div.querySelector('.qq-choices-container');
+  addChoiceToQuestion(choicesContainer, true);
+  addChoiceToQuestion(choicesContainer, true);
+}
+
+function addChoiceToQuestion(btnOrContainer, isInitial = false) {
+  const container = isInitial ? btnOrContainer : btnOrContainer.closest('.quiz-q-block').querySelector('.qq-choices-container');
+  const count = container.querySelectorAll('.qq-choice-wrapper').length;
+  const div = document.createElement('div');
+  div.className = 'form-group qq-choice-wrapper flex gap-sm items-center';
+  div.style.marginBottom = '8px';
+  div.innerHTML = `
+    <span style="font-size:.85rem;color:var(--text2);min-width:20px">${count + 1}.</span>
+    <input type="text" class="form-input qq-choice" placeholder="보기 ${count + 1}" style="flex:1">
+    <button class="btn btn-danger btn-sm" onclick="removeChoice(this)" style="padding:4px 8px">×</button>
+  `;
+  container.appendChild(div);
+}
+
+function removeChoice(btn) {
+  const container = btn.closest('.qq-choices-container');
+  if (container.querySelectorAll('.qq-choice-wrapper').length <= 2) {
+    return toast('최소 2개의 보기가 필요합니다.', 'error');
+  }
+  btn.closest('.qq-choice-wrapper').remove();
+  // Renumber
+  container.querySelectorAll('.qq-choice-wrapper').forEach((w, i) => {
+    w.querySelector('span').textContent = `${i + 1}.`;
+    w.querySelector('input').placeholder = `보기 ${i + 1}`;
+  });
 }
 
 async function submitQuiz() {
@@ -1093,7 +1115,7 @@ async function submitQuiz() {
     const answerIndex = parseInt(block.querySelector('.qq-answer').value) - 1;
     if (!question) return toast('빈 질문이 있습니다.', 'error');
     if (choices.length < 2) return toast(`"${question}" 문제에 보기가 2개 이상 필요합니다.`, 'error');
-    if (isNaN(answerIndex) || answerIndex < 0 || answerIndex >= choices.length) return toast(`"${question}" 문제의 정답 번호가 유효하지 않습니다.`, 'error');
+    if (isNaN(answerIndex) || answerIndex < 0 || answerIndex >= choices.length) return toast(`"${question}" 문제의 정답 번호가 유효하지 않습니다. (최대:${choices.length})`, 'error');
     questions.push({ question, choices, answerIndex });
   }
 
@@ -1109,12 +1131,16 @@ async function submitQuiz() {
 }
 
 // ─── 퀴즈 선택 모달 ───
-function openQuizSelect(id) {
+function openQuizSelect(id, totalCount) {
   const html = `
     <div class="modal-overlay" onclick="closeModal(event)">
       <div class="modal" onclick="event.stopPropagation()">
         <h2>게임 모드 선택</h2>
-        <p style="color:var(--text2);margin-bottom:20px">원하는 모드를 선택하세요</p>
+        <div class="form-group" style="margin-bottom:20px">
+          <label>문항 수 (최대 ${totalCount})</label>
+          <input type="number" id="quiz-play-count" class="form-input" value="${totalCount}" min="1" max="${totalCount}">
+        </div>
+        <p style="color:var(--text2);margin-bottom:12px;font-size:.9rem">원하는 모드를 선택하세요</p>
         <div style="display:flex;flex-direction:column;gap:12px">
           <button class="btn btn-primary" style="justify-content:center" onclick="closeModal();startQuizGame('${id}','quiz')">일반 퀴즈</button>
           <button class="btn btn-primary" style="justify-content:center;background:#10b981" onclick="closeModal();startQuizGame('${id}','match')">매칭 게임</button>
@@ -1129,7 +1155,16 @@ function openQuizSelect(id) {
 
 async function startQuizGame(id, mode) {
   try {
+    const playCountInput = $('quiz-play-count');
+    const requestedCount = playCountInput ? parseInt(playCountInput.value) : 0;
+
     quizData = await api(`/api/quizzes/${id}`);
+
+    // Shuffle and slice questions
+    const shuffled = [...quizData.questions].sort(() => Math.random() - 0.5);
+    const finalCount = (requestedCount > 0 && requestedCount <= shuffled.length) ? requestedCount : shuffled.length;
+    quizData.questions = shuffled.slice(0, finalCount);
+
     quizMode = mode;
     quizScore = 0;
     quizQuestionIndex = 0;
