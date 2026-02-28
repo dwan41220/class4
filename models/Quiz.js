@@ -11,6 +11,8 @@ const quizSchema = new mongoose.Schema({
     subject: { type: mongoose.Schema.Types.ObjectId, ref: 'Subject' },
     creator: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     questions: [questionSchema],
+    thumbnailUrl: { type: String, default: null },
+    thumbnailPublicId: { type: String, default: null },
     playCount: { type: Number, default: 0 },
     createdAt: { type: Date, default: Date.now },
 });

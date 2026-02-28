@@ -562,9 +562,10 @@ select.form-input {
 }
 
 .logo-sub {
-  font-family: var(--font);
+  font-family: inherit;
   font-size: .65rem;
   font-weight: 500;
+  font-style: italic;
   color: var(--text2);
   -webkit-text-fill-color: var(--text2);
   letter-spacing: 0.2px;
@@ -1124,6 +1125,14 @@ select.form-input {
 .transfer-card .detail .desc {
   font-size: .85rem;
   font-weight: 500
+}
+
+.auth-logo-sub {
+  font-family: inherit;
+  font-size: .8rem;
+  font-style: italic;
+  color: var(--text2);
+  margin-top: 4px
 }
 
 .transfer-card .detail .date {

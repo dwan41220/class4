@@ -5,19 +5,19 @@ const QuizScore = require('../models/QuizScore');
 const User = require('../models/User');
 const PointTransaction = require('../models/PointTransaction');
 const { authMiddleware } = require('../middleware/auth');
+const { uploadImage, cloudinary } = require('../config/cloudinary');
+const multer = require('multer');
 
 // POST /api/quizzes — 퀴즈 업로드
-router.post('/', authMiddleware, async (req, res) => {
+router.post('/', authMiddleware, uploadImage.single('thumbnail'), async (req, res) => {
     try {
-        const { title, subject, questions } = req.body;
+        let { title, subject, questions } = req.body;
+
+        // Parse questions if they come as a string (FormData case)
+        if (typeof questions === 'string') questions = JSON.parse(questions);
+
         if (!title || !questions || questions.length < 2) {
             return res.status(400).json({ error: '제목과 최소 2개 이상의 문제가 필요합니다.' });
-        }
-
-        for (const q of questions) {
-            if (!q.question || !q.choices || q.choices.length < 2 || q.answerIndex === undefined) {
-                return res.status(400).json({ error: '각 문제에는 질문, 2개 이상의 보기, 정답 번호가 필요합니다.' });
-            }
         }
 
         const quiz = await Quiz.create({
@@ -25,6 +25,8 @@ router.post('/', authMiddleware, async (req, res) => {
             subject: subject || undefined,
             creator: req.user.userId,
             questions,
+            thumbnailUrl: req.file ? req.file.path : null,
+            thumbnailPublicId: req.file ? req.file.filename : null,
         });
 
         res.status(201).json(quiz);
@@ -148,17 +150,15 @@ router.post('/:id/score', authMiddleware, async (req, res) => {
 });
 
 // PUT /api/quizzes/:id — 퀴즈 수정
-router.put('/:id', authMiddleware, async (req, res) => {
+router.put('/:id', authMiddleware, uploadImage.single('thumbnail'), async (req, res) => {
     try {
-        const { title, subject, questions } = req.body;
+        let { title, subject, questions } = req.body;
+
+        // Parse questions if they come as a string
+        if (typeof questions === 'string') questions = JSON.parse(questions);
+
         if (!title || !questions || questions.length < 2) {
             return res.status(400).json({ error: '제목과 최소 2개 이상의 문제가 필요합니다.' });
-        }
-
-        for (const q of questions) {
-            if (!q.question || !q.choices || q.choices.length < 2 || q.answerIndex === undefined) {
-                return res.status(400).json({ error: '각 문제에는 질문, 2개 이상의 보기, 정답 번호가 필요합니다.' });
-            }
         }
 
         const quiz = await Quiz.findById(req.params.id);
@@ -167,6 +167,15 @@ router.put('/:id', authMiddleware, async (req, res) => {
         // 출제자 본인 확인
         if (quiz.creator.toString() !== req.user.userId) {
             return res.status(403).json({ error: '수정 권한이 없습니다.' });
+        }
+
+        // Thumbnail Update
+        if (req.file) {
+            if (quiz.thumbnailPublicId) {
+                await cloudinary.uploader.destroy(quiz.thumbnailPublicId);
+            }
+            quiz.thumbnailUrl = req.file.path;
+            quiz.thumbnailPublicId = req.file.filename;
         }
 
         quiz.title = title;

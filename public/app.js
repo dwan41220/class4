@@ -217,7 +217,15 @@ function onThumbSelect(input) {
 }
 function onFileSelect(input) {
   const label = $('file-label');
-  if (input.files.length) {
+  if (input.files?.[0]) {
+    label.classList.add('has-file');
+    label.querySelector('span').textContent = `${input.files[0].name} (선택됨)`;
+  }
+}
+
+function onQuizThumbSelect(input) {
+  const label = $('quiz-thumb-label');
+  if (input.files?.[0]) {
     label.classList.add('has-file');
     label.querySelector('span').textContent = `${input.files[0].name} (선택됨)`;
   }
@@ -315,7 +323,7 @@ async function loadSubjects() {
     hide('worksheet-list-section');
     grid.innerHTML = subjects.length ? subjects.map(s => `
       <div class="card subject-card" onclick="openSubject('${s._id}','${s.name}')">
-        <div class="thumb">${s.thumbnailUrl ? `<img src="${s.thumbnailUrl}" alt="${s.name}">` : ''}</div>
+        <div class="thumb">${s.thumbnailUrl ? `<img src="${s.thumbnailUrl}" alt="${s.name}">` : `<img src="/assets/no-cover.png" alt="${s.name}">`}</div>
         <div class="info">
           <h3>${s.name}</h3>
           <span>by ${s.createdBy?.username || '-'}</span>
@@ -347,7 +355,7 @@ function renderWorksheets() {
   const grid = $('worksheet-list');
   grid.innerHTML = currentWorksheets.length ? currentWorksheets.map(w => `
     <div class="card worksheet-card" onclick="openWorksheet('${w._id}')">
-      <div class="thumb">${w.thumbnailUrl ? `<img src="${w.thumbnailUrl}" alt="${w.title}">` : ''}</div>
+      <div class="thumb">${w.thumbnailUrl ? `<img src="${w.thumbnailUrl}" alt="${w.title}">` : `<img src="/assets/no-cover.png" alt="${w.title}">`}</div>
       <div class="body">
         <h4>${w.title}</h4>
         <div class="meta">
@@ -427,7 +435,7 @@ async function openWorksheet(id) {
         <div class="modal" onclick="event.stopPropagation()">
           <h2>${w.title}</h2>
           <div style="margin-bottom:16px">
-            ${w.thumbnailUrl ? `<img src="${w.thumbnailUrl}" style="width:100%;border-radius:var(--radius);margin-bottom:12px" alt="${w.title}">` : ''}
+            ${w.thumbnailUrl ? `<img src="${w.thumbnailUrl}" style="width:100%;border-radius:var(--radius);margin-bottom:12px" alt="${w.title}">` : `<img src="/assets/no-cover.png" style="width:100%;border-radius:var(--radius);margin-bottom:12px" alt="${w.title}">`}
             <p style="color:var(--text2);font-size:.9rem">과목: ${w.subject?.name || '-'}</p>
             <p style="color:var(--text2);font-size:.9rem">업로더: ${w.uploader?.username || '-'}</p>
             <p style="color:var(--text2);font-size:.9rem">조회수: ${w.views} | ${formatDate(w.createdAt)}</p>
@@ -509,7 +517,7 @@ async function loadFriendsBestWorksheets() {
       ? worksheets.map(w => `
         <div class="card worksheet-card" onclick="openWorksheet('${w._id}')">
           <div class="thumbnail">
-            ${w.thumbnailUrl ? `<img src="${w.thumbnailUrl}" alt="${w.title}">` : '<div class="placeholder">PDF/IMG</div>'}
+            <img src="${w.thumbnailUrl || '/assets/no-cover.png'}" alt="${w.title}">
           </div>
           <div class="body">
             <h4>${w.title}</h4>
@@ -1054,7 +1062,8 @@ async function loadQuizList() {
       ? quizzes.map(q => {
         const isCreator = q.creator?._id === currentUser.id;
         return `
-        <div class="card" style="cursor:pointer" onclick="openQuizSelect('${q._id}', ${q.questions.length})">
+        <div class="card" style="cursor:pointer;overflow:hidden" onclick="openQuizSelect('${q._id}', ${q.questions.length})">
+          <div class="thumb" style="height:120px;background:var(--bg2)"><img src="${q.thumbnailUrl || '/assets/no-cover.png'}" style="width:100%;height:100%;object-fit:cover" alt="${q.title}"></div>
           <div style="padding:16px">
             <div class="flex justify-between items-start">
               <h4 style="margin-bottom:8px">${q.title}</h4>
@@ -1163,9 +1172,23 @@ async function submitQuiz() {
   }
 
   try {
+    const formData = new FormData();
+    formData.append('title', title);
+    if (subject) formData.append('subject', subject);
+    formData.append('questions', JSON.stringify(questions));
+
+    const thumb = $('quiz-thumbnail').files[0];
+    if (thumb) formData.append('thumbnail', thumb);
+
     const method = editingQuizId ? 'PUT' : 'POST';
     const endpoint = editingQuizId ? `/api/quizzes/${editingQuizId}` : '/api/quizzes';
-    await api(endpoint, { method, body: { title, subject: subject || undefined, questions } });
+
+    // Using fetch directly because api() helper doesn't support FormData well for automated Content-Type
+    const headers = { 'Authorization': `Bearer ${token}` };
+    const res = await fetch(API + endpoint, { method, headers, body: formData });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || '오류 발생');
+
     toast(editingQuizId ? '퀴즈 수정 완료!' : '퀴즈 업로드 완료!', 'success');
     editingQuizId = null;
     showQuizMainTab('play');
@@ -1184,6 +1207,8 @@ async function editQuiz(id) {
     // Populate form
     $('quiz-title').value = quiz.title;
     $('quiz-subject').value = quiz.subject?._id || '';
+    $('quiz-thumbnail').value = '';
+    $('quiz-thumb-label').querySelector('span').textContent = quiz.thumbnailUrl ? '표지 변경 (이미 등록됨)' : '표지 이미지 선택 (미선택 시 기본 표지)';
 
     const container = $('quiz-questions-container');
     container.innerHTML = '<h3 style="margin-bottom:12px">문제 목록</h3>';
