@@ -40,6 +40,8 @@ mongoose.connect(process.env.MONGODB_URI)
 
         app.listen(PORT, () => {
             console.log(`🚀 서버 실행 중: http://localhost:${PORT}`);
+            // 서버 깨우기 봇 시작
+            startKeepAlive();
         });
     })
     .catch(err => {
@@ -107,4 +109,25 @@ async function checkWeeklyReward() {
     } catch (err) {
         console.error('주간 보상 체크 오류:', err.message);
     }
+}
+
+// 서버 깨우기 봇 (Keep-Alive)
+function startKeepAlive() {
+    const url = process.env.PING_URL;
+    if (!url) {
+        console.log('📡 [Keep-Alive] PING_URL이 설정되지 않아 봇을 시작하지 않습니다.');
+        return;
+    }
+
+    console.log(`🤖 [Keep-Alive Bot] 작동 중... (대상: ${url})`);
+
+    // 14분마다 핑 (Render 등 무료 티어 15분 미활동 시 중지 방지)
+    setInterval(() => {
+        const protocol = url.startsWith('https') ? require('https') : require('http');
+        protocol.get(url, (res) => {
+            console.log(`📡 [Keep-Alive] 핑 완료 (상태 코드: ${res.statusCode}) - ${new Date().toLocaleString()}`);
+        }).on('error', (err) => {
+            console.error('📡 [Keep-Alive] 핑 실패:', err.message);
+        });
+    }, 14 * 60 * 1000);
 }
