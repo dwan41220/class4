@@ -874,6 +874,7 @@ async function loadAdminWorksheets() {
         <td>${w.views}</td>
         <td>
           <div class="flex gap-sm">
+            <button class="btn btn-secondary btn-sm" onclick="changeThumbnail('worksheets','${w._id}')">표지</button>
             <button class="btn btn-secondary btn-sm" onclick="openViewAdjustModal('${w._id}','${w.title.replace(/'/g, "\\'")}',${w.views})">수정</button>
             <button class="btn btn-danger btn-sm" onclick="deleteAdminWorksheet('${w._id}','${w.title.replace(/'/g, "\\'")}')">삭제</button>
           </div>
@@ -936,7 +937,10 @@ async function loadAdminSubjects() {
         <td>${s.createdBy?.username || '-'}</td>
         <td>${count} 개</td>
         <td>
-          <button class="btn btn-danger btn-sm" onclick="deleteAdminSubject('${s._id}','${s.name.replace(/'/g, "\\'")}', ${count})">삭제</button>
+          <div class="flex gap-sm">
+            <button class="btn btn-secondary btn-sm" onclick="changeThumbnail('subjects','${s._id}')">표지</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteAdminSubject('${s._id}','${s.name.replace(/'/g, "\\'")}', ${count})">삭제</button>
+          </div>
         </td>
       </tr>`;
     }).join('') : '<tr><td colspan="4" style="text-align:center;color:var(--text2);padding:20px">과목이 없습니다.</td></tr>';
@@ -950,6 +954,36 @@ async function deleteAdminSubject(id, name, count) {
     toast(`과목 "${name}" 삭제 완료!`, 'success');
     loadAdminSubjects();
   } catch (e) { toast(e.message, 'error'); }
+}
+
+function changeThumbnail(type, id) {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+  input.onchange = async () => {
+    const file = input.files[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      toast('이미지는 10MB 이하만 가능합니다.', 'error');
+      return;
+    }
+    toast('표지 업로드 중...', 'info');
+    try {
+      const formData = new FormData();
+      formData.append('thumbnail', file);
+      const res = await fetch(`${API}/api/admin/${type}/${id}/thumbnail`, {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${adminToken}` },
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '업로드 실패');
+      toast(data.message, 'success');
+      if (type === 'subjects') loadAdminSubjects();
+      if (type === 'worksheets') loadAdminWorksheets();
+    } catch (e) { toast(e.message, 'error'); }
+  };
+  input.click();
 }
 
 // ─── QUIZ ───

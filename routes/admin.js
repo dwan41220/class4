@@ -224,6 +224,51 @@ router.delete('/subjects/:id', adminMiddleware, async (req, res) => {
     }
 });
 
+// PATCH /api/admin/subjects/:id/thumbnail — 과목 표지 변경
+const { uploadImage } = require('../config/cloudinary');
+router.patch('/subjects/:id/thumbnail', adminMiddleware, uploadImage.single('thumbnail'), async (req, res) => {
+    try {
+        const subject = await Subject.findById(req.params.id);
+        if (!subject) return res.status(404).json({ error: '과목을 찾을 수 없습니다.' });
+
+        // 기존 썸네일 삭제
+        if (subject.thumbnailPublicId) {
+            await cloudinary.uploader.destroy(subject.thumbnailPublicId);
+        }
+
+        subject.thumbnailUrl = req.file.path;
+        subject.thumbnailPublicId = req.file.filename;
+        await subject.save();
+
+        res.json({ message: '과목 표지가 변경되었습니다!', thumbnailUrl: subject.thumbnailUrl });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: '서버 오류' });
+    }
+});
+
+// PATCH /api/admin/worksheets/:id/thumbnail — 학습지 표지 변경
+router.patch('/worksheets/:id/thumbnail', adminMiddleware, uploadImage.single('thumbnail'), async (req, res) => {
+    try {
+        const worksheet = await Worksheet.findById(req.params.id);
+        if (!worksheet) return res.status(404).json({ error: '학습지를 찾을 수 없습니다.' });
+
+        // 기존 썸네일 삭제
+        if (worksheet.thumbnailPublicId) {
+            await cloudinary.uploader.destroy(worksheet.thumbnailPublicId);
+        }
+
+        worksheet.thumbnailUrl = req.file.path;
+        worksheet.thumbnailPublicId = req.file.filename;
+        await worksheet.save();
+
+        res.json({ message: '학습지 표지가 변경되었습니다!', thumbnailUrl: worksheet.thumbnailUrl });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: '서버 오류' });
+    }
+});
+
 // GET /api/admin/quizzes — 전체 퀴즈 목록 (관리자)
 router.get('/quizzes', adminMiddleware, async (req, res) => {
     try {
