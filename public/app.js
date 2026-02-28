@@ -1290,6 +1290,7 @@ function checkStandardAnswer(selected, correct) {
 
 // ─── 모드 2: 매칭 게임 ───
 let matchSelected = null;
+let matchSelectedSide = null; // 'q' or 'a'
 let matchPairs = [];
 let matchMatched = 0;
 let matchStartTime = 0;
@@ -1299,49 +1300,62 @@ function renderMatchGame() {
   matchPairs = questions.map((q, i) => ({ id: i, question: q.question, answer: q.choices[q.answerIndex] }));
   matchMatched = 0;
   matchSelected = null;
+  matchSelectedSide = null;
   matchStartTime = Date.now();
 
   const shuffledAnswers = [...matchPairs].sort(() => Math.random() - 0.5);
 
   $('quiz-game-area').innerHTML = `
-      <p style="color:var(--text2);margin-bottom:16px">왼쪽 문제를 누른 후 오른쪽 정답을 매칭하세요!</p>
+      <p style="color:var(--text2);margin-bottom:16px">문제(Q)와 정답(A) 중 아무 쪽이나 먼저 누르고 짝을 맞추세요!</p>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
         <div id="match-left" style="display:flex;flex-direction:column;gap:8px">
           ${matchPairs.map(p => `
             <button class="btn btn-secondary match-q" data-id="${p.id}" 
               style="text-align:left;padding:10px 14px;font-size:.9rem;min-height:48px;white-space:normal"
-              onclick="selectMatchQuestion(${p.id})">Q. ${p.question}</button>`).join('')}
+              onclick="handleMatchClick(${p.id}, 'q')">Q. ${p.question}</button>`).join('')}
         </div>
         <div id="match-right" style="display:flex;flex-direction:column;gap:8px">
           ${shuffledAnswers.map(p => `
             <button class="btn btn-secondary match-a" data-id="${p.id}" 
               style="text-align:left;padding:10px 14px;font-size:.9rem;min-height:48px;white-space:normal"
-              onclick="selectMatchAnswer(${p.id})">A. ${p.answer}</button>`).join('')}
+              onclick="handleMatchClick(${p.id}, 'a')">A. ${p.answer}</button>`).join('')}
         </div>
       </div>
       <div id="match-timer" style="margin-top:16px;text-align:center;color:var(--accent);font-weight:700">⏱️ 매칭 중...</div>`;
 }
 
-function selectMatchQuestion(id) {
-  document.querySelectorAll('.match-q').forEach(b => b.style.outline = 'none');
-  const btn = document.querySelector(`.match-q[data-id="${id}"]`);
-  if (btn && !btn.disabled) {
-    btn.style.outline = '3px solid var(--accent)';
-    matchSelected = id;
+function handleMatchClick(id, side) {
+  const qBtns = document.querySelectorAll('.match-q');
+  const aBtns = document.querySelectorAll('.match-a');
+
+  // If nothing selected yet, or selecting same side again -> change selection
+  if (matchSelected === null || matchSelectedSide === side) {
+    qBtns.forEach(b => b.style.outline = 'none');
+    aBtns.forEach(b => b.style.outline = 'none');
+
+    const btn = document.querySelector(`.match-${side}[data-id="${id}"]`);
+    if (btn && !btn.disabled) {
+      btn.style.outline = '3px solid var(--accent)';
+      matchSelected = id;
+      matchSelectedSide = side;
+    }
+    return;
   }
-}
 
-function selectMatchAnswer(id) {
-  if (matchSelected === null) return toast('먼저 왼쪽 문제를 선택하세요!', 'error');
-  const qBtn = document.querySelector(`.match-q[data-id="${matchSelected}"]`);
-  const aBtn = document.querySelector(`.match-a[data-id="${id}"]`);
+  // If selecting differnt side -> check match
+  const qId = side === 'q' ? id : matchSelected;
+  const aId = side === 'a' ? id : matchSelected;
 
-  if (matchSelected === id) {
-    // correct match!
+  const qBtn = document.querySelector(`.match-q[data-id="${qId}"]`);
+  const aBtn = document.querySelector(`.match-a[data-id="${aId}"]`);
+
+  if (qId === aId) {
+    // Correct!
     qBtn.style.background = '#bbf7d0'; qBtn.disabled = true; qBtn.style.outline = 'none';
-    aBtn.style.background = '#bbf7d0'; aBtn.disabled = true;
+    aBtn.style.background = '#bbf7d0'; aBtn.disabled = true; aBtn.style.outline = 'none';
     matchMatched++;
     matchSelected = null;
+    matchSelectedSide = null;
 
     if (matchMatched === matchPairs.length) {
       const elapsed = ((Date.now() - matchStartTime) / 1000).toFixed(1);
@@ -1350,11 +1364,16 @@ function selectMatchAnswer(id) {
       setTimeout(() => showQuizResult(), 1500);
     }
   } else {
-    // wrong
-    aBtn.style.background = '#fecaca';
-    setTimeout(() => { aBtn.style.background = ''; }, 500);
+    // Wrong
+    const currentBtn = document.querySelector(`.match-${side}[data-id="${id}"]`);
+    currentBtn.style.background = '#fecaca';
+    setTimeout(() => { currentBtn.style.background = ''; }, 500);
+
+    // Clear previous selection
     matchSelected = null;
-    document.querySelectorAll('.match-q').forEach(b => b.style.outline = 'none');
+    matchSelectedSide = null;
+    qBtns.forEach(b => b.style.outline = 'none');
+    aBtns.forEach(b => b.style.outline = 'none');
   }
 }
 
