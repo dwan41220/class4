@@ -1508,7 +1508,7 @@ async function showQuizResult() {
         <h2 style="margin-bottom:8px">게임 종료!</h2>
         <p style="color:var(--text2);margin-bottom:20px">${modeNames[quizMode]}</p>
         <div style="font-size:3rem;font-weight:800;color:var(--accent);margin-bottom:8px">${quizScore}점</div>
-        <p style="color:var(--text2);margin-bottom:24px">업로더에게 100pt가 지급되었습니다!</p>
+        ${(quizData.creator?._id || quizData.creator) !== currentUser.id ? `<p style="color:var(--text2);margin-bottom:24px">업로더에게 100pt가 지급되었습니다!</p>` : '<div style="margin-bottom:24px"></div>'}
         <div class="flex gap-sm" style="justify-content:center">
           <button class="btn btn-primary" onclick="startQuizGame('${quizData._id}', '${quizMode}')">다시 하기</button>
           <button class="btn btn-secondary" onclick="exitQuizGame()">나가기</button>
