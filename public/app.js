@@ -466,14 +466,38 @@ async function loadProfile() {
           <div class="pts">${w.views} views</div>
         </div>`).join('')
       : '<p style="color:var(--text2);font-size:.9rem">아직 업로드한 학습지가 없습니다.</p>';
-
   } catch (e) { toast(e.message, 'error'); }
 }
 
 // ─── FRIENDS PAGE ───
-function loadFriendsPage() {
-  loadFriendsBestWorksheets();
-  loadTransferList();
+async function loadFriendsPage() {
+  try {
+    const mutuals = await api('/api/follows/mutual');
+    const sections = document.querySelectorAll('#page-friends .profile-section');
+    const pageHeader = document.querySelector('#page-friends .page-header');
+
+    // Remove any existing empty notice
+    const existingNotice = $('friends-empty-notice');
+    if (existingNotice) existingNotice.remove();
+
+    if (mutuals.length === 0) {
+      sections.forEach(s => s.classList.add('hidden'));
+      const emptyNotice = document.createElement('div');
+      emptyNotice.id = 'friends-empty-notice';
+      emptyNotice.style.cssText = 'text-align:center;padding:60px 20px;color:var(--text2)';
+      emptyNotice.innerHTML = `
+        <div style="font-size:3rem;margin-bottom:16px">👥</div>
+        <h3 style="margin-bottom:8px;color:var(--text)">아직 친구가 없어요.</h3>
+        <p style="font-size:.9rem">학우들 목록에서 서로 팔로우하면 친구가 되어<br>포인트를 주고받을 수 있습니다!</p>
+        <button class="btn btn-primary" style="margin-top:24px" onclick="navigateTo('classmates')">친구 찾으러 가기</button>
+      `;
+      pageHeader.after(emptyNotice);
+    } else {
+      sections.forEach(s => s.classList.remove('hidden'));
+      loadFriendsBestWorksheets();
+      loadTransferList();
+    }
+  } catch (e) { toast(e.message, 'error'); }
 }
 
 async function loadFriendsBestWorksheets() {
