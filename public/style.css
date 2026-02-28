@@ -300,7 +300,10 @@ textarea {
   font-family: 'Playfair Display', serif;
   font-size: 2.2rem;
   font-weight: 700;
-  color: var(--accent);
+  background: var(--ig-gradient2);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
   margin-bottom: 0;
   letter-spacing: -0.5px;
   line-height: 1.1
@@ -550,7 +553,10 @@ select.form-input {
   font-family: 'Playfair Display', serif;
   font-size: 1.45rem;
   font-weight: 700;
-  color: var(--accent);
+  background: var(--ig-gradient2);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
   letter-spacing: -0.5px;
   line-height: 1.1
 }
