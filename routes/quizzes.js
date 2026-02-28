@@ -147,4 +147,38 @@ router.post('/:id/score', authMiddleware, async (req, res) => {
     }
 });
 
+// PUT /api/quizzes/:id — 퀴즈 수정
+router.put('/:id', authMiddleware, async (req, res) => {
+    try {
+        const { title, subject, questions } = req.body;
+        if (!title || !questions || questions.length < 2) {
+            return res.status(400).json({ error: '제목과 최소 2개 이상의 문제가 필요합니다.' });
+        }
+
+        for (const q of questions) {
+            if (!q.question || !q.choices || q.choices.length < 2 || q.answerIndex === undefined) {
+                return res.status(400).json({ error: '각 문제에는 질문, 2개 이상의 보기, 정답 번호가 필요합니다.' });
+            }
+        }
+
+        const quiz = await Quiz.findById(req.params.id);
+        if (!quiz) return res.status(404).json({ error: '퀴즈를 찾을 수 없습니다.' });
+
+        // 출제자 본인 확인
+        if (quiz.creator.toString() !== req.user.userId) {
+            return res.status(403).json({ error: '수정 권한이 없습니다.' });
+        }
+
+        quiz.title = title;
+        quiz.subject = subject || undefined;
+        quiz.questions = questions;
+        await quiz.save();
+
+        res.json({ message: '퀴즈가 수정되었습니다!', quiz });
+    } catch (err) {
+        console.error('Quiz update error:', err);
+        res.status(500).json({ error: '서버 오류' });
+    }
+});
+
 module.exports = router;

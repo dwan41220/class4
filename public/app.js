@@ -994,6 +994,7 @@ let quizMode = '';
 let speedTimer = null;
 let speedTimeLeft = 30;
 let quizQuestionCount = 0;
+let editingQuizId = null;
 
 function loadQuizPage() {
   showQuizMainTab('play');
@@ -1001,12 +1002,24 @@ function loadQuizPage() {
 
 function showQuizMainTab(tab) {
   document.querySelectorAll('.quiz-main-tab').forEach(t => t.classList.remove('active'));
-  event?.target?.classList.add('active');
+  // find matching tab button and activate it
+  const tabBtns = document.querySelectorAll('.quiz-main-tab');
+  if (tab === 'play') tabBtns[0].classList.add('active');
+  if (tab === 'create') tabBtns[1].classList.add('active');
+  if (tab === 'leaderboard') tabBtns[2].classList.add('active');
+
   hide('quiz-play-section');
   hide('quiz-create-section');
   hide('quiz-leaderboard-section');
   if (tab === 'play') { show('quiz-play-section'); loadQuizList(); }
-  if (tab === 'create') { show('quiz-create-section'); loadQuizSubjects(); initQuizForm(); }
+  if (tab === 'create') {
+    show('quiz-create-section');
+    loadQuizSubjects();
+    if (!editingQuizId) {
+      $('quiz-create-title-text').textContent = '퀴즈 만들기';
+      initQuizForm();
+    }
+  }
   if (tab === 'leaderboard') { show('quiz-leaderboard-section'); loadLeaderboard(); }
 }
 
@@ -1014,10 +1027,15 @@ async function loadQuizList() {
   try {
     const quizzes = await api('/api/quizzes');
     $('quiz-list').innerHTML = quizzes.length
-      ? quizzes.map(q => `
+      ? quizzes.map(q => {
+        const isCreator = q.creator?._id === currentUser.id;
+        return `
         <div class="card" style="cursor:pointer" onclick="openQuizSelect('${q._id}', ${q.questions.length})">
           <div style="padding:16px">
-            <h4 style="margin-bottom:8px">${q.title}</h4>
+            <div class="flex justify-between items-start">
+              <h4 style="margin-bottom:8px">${q.title}</h4>
+              ${isCreator ? `<button class="btn btn-secondary btn-sm" style="padding:4px 8px;font-size:.7rem" onclick="event.stopPropagation();editQuiz('${q._id}')">수정</button>` : ''}
+            </div>
             <div style="color:var(--text2);font-size:.85rem">
               <span>${q.questions.length}문제</span> ·
               <span>by ${q.creator?.username || '-'}</span> ·
@@ -1025,7 +1043,8 @@ async function loadQuizList() {
             </div>
             ${q.subject ? `<span style="display:inline-block;margin-top:8px;padding:2px 8px;background:var(--accent);color:white;border-radius:12px;font-size:.75rem">${q.subject.name}</span>` : ''}
           </div>
-        </div>`).join('')
+        </div>`;
+      }).join('')
       : '<p style="color:var(--text2);text-align:center;padding:40px;grid-column:1/-1">아직 퀴즈가 없습니다. 퀴즈를 만들어보세요!</p>';
   } catch (e) { toast(e.message, 'error'); }
 }
@@ -1120,12 +1139,62 @@ async function submitQuiz() {
   }
 
   try {
-    await api('/api/quizzes', { method: 'POST', body: { title, subject: subject || undefined, questions } });
-    toast('퀴즈 업로드 완료!', 'success');
+    const method = editingQuizId ? 'PUT' : 'POST';
+    const endpoint = editingQuizId ? `/api/quizzes/${editingQuizId}` : '/api/quizzes';
+    await api(endpoint, { method, body: { title, subject: subject || undefined, questions } });
+    toast(editingQuizId ? '퀴즈 수정 완료!' : '퀴즈 업로드 완료!', 'success');
+    editingQuizId = null;
     showQuizMainTab('play');
-    // re-highlight correct tab
-    document.querySelectorAll('.quiz-main-tab').forEach((t, i) => {
-      t.classList.toggle('active', i === 0);
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+async function editQuiz(id) {
+  try {
+    const quiz = await api(`/api/quizzes/${id}`);
+    editingQuizId = id;
+
+    // Switch to create tab UI
+    showQuizMainTab('create');
+    $('quiz-create-title-text').textContent = '퀴즈 수정하기';
+
+    // Populate form
+    $('quiz-title').value = quiz.title;
+    $('quiz-subject').value = quiz.subject?._id || '';
+
+    const container = $('quiz-questions-container');
+    container.innerHTML = '<h3 style="margin-bottom:12px">문제 목록</h3>';
+
+    quiz.questions.forEach((q, qIdx) => {
+      const div = document.createElement('div');
+      div.className = 'quiz-q-block card';
+      div.style.cssText = 'margin-bottom:12px;padding:16px';
+      div.innerHTML = `
+          <div class="flex items-center justify-between" style="margin-bottom:8px">
+            <strong>문제 ${qIdx + 1}</strong>
+            <button class="btn btn-danger btn-sm" onclick="this.closest('.quiz-q-block').remove()" style="font-size:.75rem">삭제</button>
+          </div>
+          <div class="form-group">
+            <input type="text" class="form-input qq-question" placeholder="질문을 입력하세요" value="${q.question}">
+          </div>
+          <div class="qq-choices-container"></div>
+          <button class="btn btn-secondary btn-sm" style="margin-bottom:12px;font-size:.75rem" onclick="addChoiceToQuestion(this)">+ 선택지 추가</button>
+          <div class="form-group">
+            <label>정답 번호 (1부터 시작)</label>
+            <input type="number" class="form-input qq-answer" min="1" value="${q.answerIndex + 1}">
+          </div>`;
+      container.appendChild(div);
+      const choicesContainer = div.querySelector('.qq-choices-container');
+      q.choices.forEach((choice, cIdx) => {
+        const cDiv = document.createElement('div');
+        cDiv.className = 'form-group qq-choice-wrapper flex gap-sm items-center';
+        cDiv.style.marginBottom = '8px';
+        cDiv.innerHTML = `
+          <span style="font-size:.85rem;color:var(--text2);min-width:20px">${cIdx + 1}.</span>
+          <input type="text" class="form-input qq-choice" placeholder="보기 ${cIdx + 1}" style="flex:1" value="${choice}">
+          <button class="btn btn-danger btn-sm" onclick="removeChoice(this)" style="padding:4px 8px">×</button>
+        `;
+        choicesContainer.appendChild(cDiv);
+      });
     });
   } catch (e) { toast(e.message, 'error'); }
 }
