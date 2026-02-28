@@ -51,11 +51,15 @@ router.get('/classmates', authMiddleware, async (req, res) => {
         const myFollowing = await Follow.find({ follower: myId }).select('following').lean();
         const followingIds = new Set(myFollowing.map(f => f.following?.toString()).filter(Boolean));
 
+        const myFollowers = await Follow.find({ following: myId }).select('follower').lean();
+        const followerIds = new Set(myFollowers.map(f => f.follower?.toString()).filter(Boolean));
+
         const result = users.map(u => ({
             _id: u._id,
             username: u.username,
             points: u.points,
             isFollowing: followingIds.has(u._id.toString()),
+            isFollower: followerIds.has(u._id.toString()),
         }));
 
         res.json(result);
@@ -78,11 +82,15 @@ router.get('/', authMiddleware, async (req, res) => {
         const myFollowing = await Follow.find({ follower: myId }).select('following');
         const followingIds = new Set(myFollowing.map(f => f.following?.toString()).filter(Boolean));
 
+        const myFollowers = await Follow.find({ following: myId }).select('follower');
+        const followerIds = new Set(myFollowers.map(f => f.follower?.toString()).filter(Boolean));
+
         const result = users.map(u => ({
             _id: u._id,
             username: u.username,
             points: u.points,
             isFollowing: followingIds.has(u._id.toString()),
+            isFollower: followerIds.has(u._id.toString()),
         }));
 
         res.json(result);

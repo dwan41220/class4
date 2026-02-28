@@ -566,7 +566,7 @@ async function loadClassmatesList(tab) {
             <div class="pts">${u.points?.toLocaleString()} pt</div>
             ${isF
             ? `<button class="btn btn-danger btn-sm" onclick="unfollow('${u._id}')">언팔로우</button>`
-            : `<button class="btn btn-primary btn-sm" onclick="follow('${u._id}')">팔로우</button>`}
+            : `<button class="btn btn-primary btn-sm" onclick="follow('${u._id}')">${u.isFollower ? '맞팔로우' : '팔로우'}</button>`}
           </div>`;
       }).join('')
       : `<p style="color:var(--text2);font-size:.9rem;text-align:center;padding:20px">${emptyMsg}</p>`;
