@@ -1717,35 +1717,21 @@ async function loadDeskView() {
             ` : ''}
             ${showPerson ? `
               <div class="person-icon">
-                <svg viewBox="0 0 80 50" fill="#222">
-                  <circle cx="40" cy="10" r="10"/>
-                  <ellipse cx="40" cy="35" rx="22" ry="16"/>
+                <svg viewBox="0 0 60 50" fill="#222" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="30" cy="10" r="12"/>
+                  <ellipse cx="30" cy="38" rx="28" ry="18"/>
                 </svg>
               </div>
             ` : ''}
             <div class="desk-img">
               <svg viewBox="0 0 160 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <!-- Table top (perspective) -->
                 <polygon points="10,30 150,30 140,22 20,22" fill="${topColor}"/>
                 <polygon points="10,30 150,30 150,38 10,38" fill="${midColor}"/>
                 <polygon points="10,38 150,38 140,34 20,34" fill="${botColor}" opacity="0.7"/>
-                <!-- Left front leg -->
                 <rect x="18" y="38" width="5" height="55" rx="2" fill="#b0b0b0"/>
-                <rect x="18" y="38" width="5" height="55" rx="2" fill="url(#legGrad)" />
-                <!-- Right front leg -->
                 <rect x="137" y="38" width="5" height="55" rx="2" fill="#b0b0b0"/>
-                <rect x="137" y="38" width="5" height="55" rx="2" fill="url(#legGrad)" />
-                <!-- Left back leg -->
                 <rect x="26" y="32" width="4" height="45" rx="2" fill="#999"/>
-                <!-- Right back leg -->
                 <rect x="130" y="32" width="4" height="45" rx="2" fill="#999"/>
-                <defs>
-                  <linearGradient id="legGrad" x1="0" y1="0" x2="1" y2="0">
-                    <stop offset="0%" stop-color="rgba(255,255,255,0.3)"/>
-                    <stop offset="50%" stop-color="rgba(255,255,255,0)"/>
-                    <stop offset="100%" stop-color="rgba(0,0,0,0.15)"/>
-                  </linearGradient>
-                </defs>
               </svg>
             </div>
           </div>

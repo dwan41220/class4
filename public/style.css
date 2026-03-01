@@ -1243,7 +1243,7 @@ select.form-input {
 .desk-scene {
   position: relative;
   width: 120px;
-  height: 110px;
+  height: 100px;
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -1260,14 +1260,14 @@ select.form-input {
   height: auto;
 }
 
-/* Person sits BEHIND the desk — head+shoulders above desk surface */
+/* Person behind desk — larger, head+body clearly visible above desk */
 .person-icon {
   position: absolute;
-  bottom: 46px;
+  bottom: 36px;
   left: 50%;
   transform: translateX(-50%);
-  width: 50px;
-  height: 40px;
+  width: 60px;
+  height: 50px;
   z-index: 2;
 }
 
@@ -1304,13 +1304,13 @@ select.form-input {
   font-style: italic;
 }
 
-/* ─── Fire Effect — Behind person and desk ─── */
+/* ─── Fire Effect ─── */
 .fire-effect {
   position: absolute;
-  bottom: 44px;
+  bottom: 50px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 1;
+  z-index: 2;
   pointer-events: none;
 }
 
@@ -1469,7 +1469,7 @@ select.form-input {
 
   .desk-scene {
     width: 100px;
-    height: 90px;
+    height: 80px;
   }
 
   .desk-img {
@@ -1477,8 +1477,8 @@ select.form-input {
   }
 
   .person-icon {
-    width: 40px;
-    height: 32px;
-    bottom: 38px;
+    width: 48px;
+    height: 40px;
+    bottom: 28px;
   }
 }
