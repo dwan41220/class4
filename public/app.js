@@ -1686,38 +1686,58 @@ async function loadDeskView() {
       const todayH = Math.floor(u.todaySeconds / 3600);
       const todayM = Math.floor((u.todaySeconds % 3600) / 60);
       const timeStr = u.todaySeconds > 0 ? `${todayH}시간 ${todayM}분` : '';
+      const hasStudiedToday = u.todaySeconds > 0;
 
-      // Update my today total if this is me
-      if (isMe && timerStudying) {
+      // Update my today total
+      if (isMe) {
         const el = $('timer-today-total');
         if (el) el.textContent = `오늘 총 공부 시간: ${todayH}시간 ${todayM}분`;
       }
 
+      // Desk charring: darken wood color based on today study hours (subtle)
+      const charLevel = Math.min(u.todaySeconds / 3600 / 8, 1); // max at 8hrs
+      const rBase = [224, 212, 196]; // e0b87a, d4a66a, c4935a base colors
+      const darken = (r) => Math.round(r * (1 - charLevel * 0.35));
+      const topColor = `rgb(${darken(rBase[0])},${darken(184)},${darken(122)})`;
+      const midColor = `rgb(${darken(rBase[1])},${darken(166)},${darken(106)})`;
+      const botColor = `rgb(${darken(rBase[2])},${darken(147)},${darken(90)})`;
+
+      // 3 states: studying (fire+person), studied today (person only), idle (desk only)
+      const showPerson = u.studying || hasStudiedToday;
+      const showFire = u.studying && u.fireLevel > 0;
+
       return `
         <div class="desk-card ${isMe ? 'desk-card-me' : ''}">
           <div class="desk-scene">
-            ${u.studying ? `
+            ${showFire ? `
               <div class="fire-effect fire-level-${u.fireLevel}">
                 <div class="fire-flame"></div>
                 <div class="fire-flame f2"></div>
                 <div class="fire-flame f3"></div>
               </div>
+            ` : ''}
+            ${showPerson ? `
               <div class="person-icon">
                 <svg viewBox="0 0 64 64" fill="currentColor"><circle cx="32" cy="20" r="12"/><path d="M12 56c0-11 9-20 20-20s20 9 20 20"/></svg>
               </div>
             ` : ''}
             <div class="desk-img">
               <svg viewBox="0 0 120 70" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="5" y="10" width="110" height="8" rx="2" fill="#c4935a"/>
-                <rect x="8" y="6" width="104" height="10" rx="2" fill="#d4a66a"/>
-                <rect x="12" y="0" width="96" height="8" rx="1" fill="#e0b87a"/>
+                <rect x="5" y="10" width="110" height="8" rx="2" fill="${botColor}"/>
+                <rect x="8" y="6" width="104" height="10" rx="2" fill="${midColor}"/>
+                <rect x="12" y="0" width="96" height="8" rx="1" fill="${topColor}"/>
                 <rect x="15" y="18" width="4" height="52" rx="1" fill="#aaa"/>
                 <rect x="101" y="18" width="4" height="52" rx="1" fill="#aaa"/>
               </svg>
             </div>
           </div>
           <div class="desk-name ${isMe ? 'desk-name-me' : ''}">${u.username}</div>
-          ${u.studying ? `<div class="desk-time">${timeStr}</div>` : '<div class="desk-time desk-offline">오프라인</div>'}
+          ${u.studying
+          ? `<div class="desk-time">${timeStr}</div>`
+          : hasStudiedToday
+            ? `<div class="desk-time desk-done">${timeStr}</div>`
+            : '<div class="desk-time desk-offline">오프라인</div>'
+        }
         </div>
       `;
     }).join('');
@@ -1725,6 +1745,7 @@ async function loadDeskView() {
     $('desk-grid').innerHTML = '<p style="color:var(--text2);font-size:.9rem">로딩 실패</p>';
   }
 }
+
 
 async function loadWeeklyRanking() {
   try {

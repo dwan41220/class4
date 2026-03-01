@@ -1300,6 +1300,11 @@ select.form-input {
   color: var(--text2);
 }
 
+.desk-done {
+  color: #888;
+  font-style: italic;
+}
+
 /* ─── Fire Effect — Engulfs the person ─── */
 .fire-effect {
   position: absolute;
