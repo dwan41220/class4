@@ -121,11 +121,8 @@
         <div class="nav-item active" data-page="profile" onclick="navigateTo('profile')">
           대시보드
         </div>
-        <div class="nav-item" data-page="upload" onclick="navigateTo('upload')">
-          업로드
-        </div>
-        <div class="nav-item" data-page="browse" onclick="navigateTo('browse')">
-          다운로드
+        <div class="nav-item" data-page="drive" onclick="navigateTo('drive')">
+          학습지 드라이브
         </div>
         <div class="nav-item" data-page="transfer" onclick="navigateTo('transfer')">
           송금
@@ -154,61 +151,66 @@
 
     <!-- Main Content -->
     <main class="main-content">
-      <!-- UPLOAD PAGE -->
-      <div id="page-upload" class="page">
+      <!-- WORKSHEET DRIVE PAGE -->
+      <div id="page-drive" class="page hidden">
         <div class="page-header">
-          <h2>학습지 업로드</h2>
-          <p>과목을 선택하고 학습지를 업로드하세요</p>
+          <h2>학습지 드라이브</h2>
+          <p>학습지를 업로드하거나 다운로드하세요</p>
         </div>
-        <div class="card" style="max-width:600px">
-          <div class="form-group">
-            <label>과목 선택</label>
-            <div class="flex gap-sm">
-              <select id="upload-subject" class="form-input" style="flex:1"></select>
-              <button class="btn btn-secondary btn-sm" onclick="openNewSubjectModal()">+ 새 과목</button>
-            </div>
-          </div>
-          <div class="form-group">
-            <label>학습지 이름</label>
-            <input type="text" id="upload-title" class="form-input" placeholder="예: 2학기 중간고사 정리">
-          </div>
-          <div class="form-group">
-            <label>표지 이미지 (선택)</label>
-            <label class="file-input-label" id="thumb-label">
-              <span>이미지 선택</span>
-              <input type="file" id="upload-thumbnail" accept="image/*" style="display:none"
-                onchange="onThumbSelect(this)">
-            </label>
-          </div>
-          <div class="form-group">
-            <label>학습지 파일</label>
-            <label class="file-input-label" id="file-label">
-              <span>파일 선택 (PDF, 이미지, DOCX)</span>
-              <input type="file" id="upload-file" accept=".pdf,.png,.jpg,.jpeg,.docx,.doc" style="display:none"
-                onchange="onFileSelect(this)">
-            </label>
-          </div>
-          <button class="btn btn-primary btn-full" onclick="handleUpload()" id="upload-btn">업로드하기</button>
-        </div>
-      </div>
 
-      <!-- BROWSE PAGE -->
-      <div id="page-browse" class="page hidden">
-        <div class="page-header">
-          <h2>학습지 탐색</h2>
-          <p>과목을 선택하고 학습지를 다운로드하세요</p>
+        <div class="sort-tabs" style="margin-bottom:20px">
+          <button class="drive-sub-tab sort-tab active" onclick="showDriveSubTab('browse')">다운로드 (탐색)</button>
+          <button class="drive-sub-tab sort-tab" onclick="showDriveSubTab('upload')">업로드</button>
         </div>
-        <div id="subject-list" class="card-grid"></div>
-        <div id="worksheet-list-section" class="hidden">
-          <div class="flex items-center justify-between" style="margin-bottom:16px">
-            <button class="btn btn-secondary btn-sm" onclick="backToSubjects()">← 과목 목록</button>
-            <h3 id="current-subject-name" style="font-weight:700"></h3>
+
+        <!-- BROWSE SECTION -->
+        <div id="drive-sub-browse">
+          <div id="subject-list" class="card-grid"></div>
+          <div id="worksheet-list-section" class="hidden">
+            <div class="flex items-center justify-between" style="margin-bottom:16px">
+              <button class="btn btn-secondary btn-sm" onclick="backToSubjects()">← 과목 목록</button>
+              <h3 id="current-subject-name" style="font-weight:700"></h3>
+            </div>
+            <div class="sort-tabs">
+              <button class="sort-tab active" onclick="sortWorksheets('latest')">최신순</button>
+              <button class="sort-tab" onclick="sortWorksheets('views')">인기순</button>
+            </div>
+            <div id="worksheet-list" class="card-grid"></div>
           </div>
-          <div class="sort-tabs">
-            <button class="sort-tab active" onclick="sortWorksheets('latest')">최신순</button>
-            <button class="sort-tab" onclick="sortWorksheets('views')">인기순</button>
+        </div>
+
+        <!-- UPLOAD SECTION -->
+        <div id="drive-sub-upload" class="hidden">
+          <div class="card" style="max-width:600px">
+            <div class="form-group">
+              <label>과목 선택</label>
+              <div class="flex gap-sm">
+                <select id="upload-subject" class="form-input" style="flex:1"></select>
+                <button class="btn btn-secondary btn-sm" onclick="openNewSubjectModal()">+ 새 과목</button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>학습지 이름</label>
+              <input type="text" id="upload-title" class="form-input" placeholder="예: 2학기 중간고사 정리">
+            </div>
+            <div class="form-group">
+              <label>표지 이미지 (선택)</label>
+              <label class="file-input-label" id="thumb-label">
+                <span>이미지 선택</span>
+                <input type="file" id="upload-thumbnail" accept="image/*" style="display:none"
+                  onchange="onThumbSelect(this)">
+              </label>
+            </div>
+            <div class="form-group">
+              <label>학습지 파일</label>
+              <label class="file-input-label" id="file-label">
+                <span>파일 선택 (PDF, 이미지, DOCX)</span>
+                <input type="file" id="upload-file" accept=".pdf,.png,.jpg,.jpeg,.docx,.doc" style="display:none"
+                  onchange="onFileSelect(this)">
+              </label>
+            </div>
+            <button class="btn btn-primary btn-full" onclick="handleUpload()" id="upload-btn">업로드하기</button>
           </div>
-          <div id="worksheet-list" class="card-grid"></div>
         </div>
       </div>
 
@@ -440,11 +442,8 @@
         <div class="mobile-nav-item active" data-page="profile" onclick="navigateTo('profile')">
           대시보드
         </div>
-        <div class="mobile-nav-item" data-page="upload" onclick="navigateTo('upload')">
-          업로드
-        </div>
-        <div class="mobile-nav-item" data-page="browse" onclick="navigateTo('browse')">
-          탐색
+        <div class="mobile-nav-item" data-page="drive" onclick="navigateTo('drive')">
+          학습지 드라이브
         </div>
         <div class="mobile-nav-item" data-page="transfer" onclick="navigateTo('transfer')">
           송금

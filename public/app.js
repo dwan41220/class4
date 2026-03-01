@@ -197,13 +197,24 @@ function navigateTo(page) {
   show(`page-${page}`);
   document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.page === page));
   document.querySelectorAll('.mobile-nav-item').forEach(n => n.classList.toggle('active', n.dataset.page === page));
-  if (page === 'browse') loadSubjects();
+  if (page === 'drive') {
+    loadSubjects(); // for browse
+    loadSubjectsForUpload(); // for upload
+  }
   if (page === 'profile') loadProfile();
-  if (page === 'upload') loadSubjectsForUpload();
   if (page === 'quiz') loadQuizPage();
   if (page === 'timer') loadTimerPage();
   if (page === 'ranking') loadRankingPage();
   if (page === 'transfer') loadTransferPage();
+}
+
+// ─── DRIVE SUB-TABS ───
+function showDriveSubTab(tab) {
+  document.querySelectorAll('.drive-sub-tab').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  hide('drive-sub-browse');
+  hide('drive-sub-upload');
+  show(`drive-sub-${tab}`);
 }
 
 // ─── UPLOAD ───
