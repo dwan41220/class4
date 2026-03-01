@@ -217,10 +217,25 @@
         <div class="page-header">
           <h2>내 프로필</h2>
         </div>
-        <div class="stat-grid" id="profile-stats"></div>
-        <div class="profile-section">
-          <h3>기여 학습지 TOP 3</h3>
+        <div class="stat-grid" id="profile-stats" style="margin-bottom:24px"></div>
+
+        <div class="card" style="margin-bottom:24px">
+          <div class="flex items-center justify-between" style="margin-bottom:12px">
+            <h3 style="margin:0">나의 메모</h3>
+            <button class="btn btn-primary btn-sm" onclick="saveMemo()">저장</button>
+          </div>
+          <textarea id="profile-memo" class="form-input" style="min-height:80px;resize:vertical;"
+            placeholder="자유롭게 메모를 남기세요"></textarea>
+        </div>
+
+        <div class="card" style="margin-bottom:24px">
+          <h3 style="margin-bottom:16px">기여 학습지 TOP 3</h3>
           <div id="top-worksheets" class="user-list"></div>
+        </div>
+
+        <div class="card">
+          <h3 style="margin-bottom:16px">기여 퀴즈 TOP 3</h3>
+          <div id="top-quizzes" class="user-list"></div>
         </div>
       </div>
 

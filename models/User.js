@@ -8,6 +8,7 @@ const userSchema = new mongoose.Schema({
   totalEarned: { type: Number, default: 0 },
   learningTime: { type: Number, default: 0 }, // Total learning time in seconds
   totalDownloads: { type: Number, default: 0 }, // Total unique worksheet downloads
+  memo: { type: String, default: '' },
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', userSchema);

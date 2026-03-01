@@ -468,21 +468,11 @@ async function loadProfile() {
     currentUser = { id: data.user._id, username: data.user.username, points: data.user.points };
     updateSidebar();
 
-    const formatTime = (sec) => {
-      const h = Math.floor(sec / 3600);
-      const m = Math.floor((sec % 3600) / 60);
-      const s = sec % 60;
-      if (h > 0) return `${h}시간 ${m}분`;
-      if (m > 0) return `${m}분 ${s}초`;
-      return `${s}초`;
-    };
-
     $('profile-stats').innerHTML = `
       <div class="stat-card"><div class="value">${data.user.points?.toLocaleString()}</div><div class="label">보유 포인트</div></div>
-      <div class="stat-card"><div class="value">${data.user.learningTime ? formatTime(data.user.learningTime) : '0초'}</div><div class="label">학습 시간</div></div>
-      <div class="stat-card"><div class="value">${data.user.totalDownloads || 0}</div><div class="label">다운로드 수</div></div>
-      <div class="stat-card"><div class="value">${data.followerCount}</div><div class="label">팔로워</div></div>
-      <div class="stat-card"><div class="value">${data.followingCount}</div><div class="label">팔로잉</div></div>`;
+      <div class="stat-card"><div class="value">${data.highestScore?.toLocaleString() || 0}</div><div class="label">퀴즈 최고 점수</div></div>`;
+
+    $('profile-memo').value = data.user.memo || '';
 
     $('top-worksheets').innerHTML = data.topWorksheets.length
       ? data.topWorksheets.map((w, i) => `
@@ -491,7 +481,24 @@ async function loadProfile() {
           <div class="name">${w.title} <span style="color:var(--text2);font-size:.8rem">(${w.subject?.name})</span></div>
           <div class="pts">${w.views} views</div>
         </div>`).join('')
-      : '<p style="color:var(--text2);font-size:.9rem">아직 업로드한 학습지가 없습니다.</p>';
+      : '<p style="color:var(--text2);font-size:.9rem;padding:0 8px">아직 업로드한 학습지가 없습니다.</p>';
+
+    $('top-quizzes').innerHTML = data.topQuizzes.length
+      ? data.topQuizzes.map((q, i) => `
+        <div class="user-item">
+          <div class="avatar" style="background:${['#10b981', '#34d399', '#6ee7b7'][i]};font-size:1rem">${['1st', '2nd', '3rd'][i]}</div>
+          <div class="name">${q.title} <span style="color:var(--text2);font-size:.8rem">(${q.subject?.name})</span></div>
+          <div class="pts">${q.playCount} plays</div>
+        </div>`).join('')
+      : '<p style="color:var(--text2);font-size:.9rem;padding:0 8px">아직 만든 퀴즈가 없습니다.</p>';
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+async function saveMemo() {
+  const memoText = $('profile-memo').value;
+  try {
+    await api('/api/users/me/memo', 'PATCH', { memo: memoText });
+    toast('메모가 저장되었습니다.', 'success');
   } catch (e) { toast(e.message, 'error'); }
 }
 

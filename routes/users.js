@@ -3,6 +3,8 @@ const router = express.Router();
 const mongoose = require('mongoose');
 const User = require('../models/User');
 const Worksheet = require('../models/Worksheet');
+const Quiz = require('../models/Quiz');
+const QuizScore = require('../models/QuizScore');
 const Follow = require('../models/Follow');
 const AdminConfig = require('../models/AdminConfig');
 const { authMiddleware } = require('../middleware/auth');
@@ -13,14 +15,36 @@ router.get('/me', authMiddleware, async (req, res) => {
         const user = await User.findById(req.user.userId).select('-passwordHash');
         if (!user) return res.status(404).json({ error: '유저를 찾을 수 없습니다.' });
 
-        const followerCount = await Follow.countDocuments({ following: user._id });
-        const followingCount = await Follow.countDocuments({ follower: user._id });
         const topWorksheets = await Worksheet.find({ uploader: user._id })
             .sort({ views: -1 })
             .limit(3)
             .populate('subject', 'name');
 
-        res.json({ user, followerCount, followingCount, topWorksheets });
+        const topQuizzes = await Quiz.find({ creator: user._id })
+            .sort({ playCount: -1 })
+            .limit(3)
+            .populate('subject', 'name');
+
+        const highestScoreObj = await QuizScore.findOne({ player: user._id })
+            .sort({ score: -1 })
+            .select('score');
+        const highestScore = highestScoreObj ? highestScoreObj.score : 0;
+
+        res.json({ user, topWorksheets, topQuizzes, highestScore });
+    } catch (err) {
+        res.status(500).json({ error: '서버 오류' });
+    }
+});
+
+// PATCH /api/users/me/memo — 내 프로필 메모 저장
+router.patch('/me/memo', authMiddleware, async (req, res) => {
+    try {
+        const user = await User.findById(req.user.userId);
+        if (!user) return res.status(404).json({ error: '유저를 찾을 수 없습니다.' });
+
+        user.memo = req.body.memo || '';
+        await user.save();
+        res.json({ success: true, memo: user.memo });
     } catch (err) {
         res.status(500).json({ error: '서버 오류' });
     }
