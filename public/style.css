@@ -1275,11 +1275,11 @@ select.form-input {
 
 .person-icon {
   position: absolute;
-  bottom: 28px;
+  bottom: 52px;
   left: 50%;
   transform: translateX(-50%);
-  width: 36px;
-  height: 36px;
+  width: 43px;
+  height: 43px;
   color: #333;
   z-index: 2;
 }
@@ -1490,8 +1490,8 @@ select.form-input {
   }
 
   .person-icon {
-    width: 28px;
-    height: 28px;
-    bottom: 22px;
+    width: 34px;
+    height: 34px;
+    bottom: 40px;
   }
 }
