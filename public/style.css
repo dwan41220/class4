@@ -1320,7 +1320,7 @@ select.form-input {
 /* ─── Fire Effect ─── */
 .fire-effect {
   position: absolute;
-  bottom: 52px;
+  bottom: 60px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 2;
@@ -1496,7 +1496,7 @@ select.form-input {
   }
 
   .fire-effect {
-    bottom: 40px;
+    bottom: 47px;
     transform: translateX(-50%) scale(0.85);
   }
 }
