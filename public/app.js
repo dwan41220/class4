@@ -4,7 +4,7 @@ const API = '';
 let token = localStorage.getItem('token');
 let adminToken = localStorage.getItem('adminToken');
 let currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
-let currentPage = 'upload';
+let currentPage = 'profile';
 let authMode = 'check'; // check → activate → login
 let authUserActivated = false;
 let isUploading = false;
@@ -166,7 +166,7 @@ function showDashboard() {
   hide('admin-dashboard');
   show('dashboard');
   updateSidebar();
-  navigateTo('upload');
+  navigateTo('profile');
   loadSubjectsForUpload();
   initTimerSocket();
   checkStaleSession();
