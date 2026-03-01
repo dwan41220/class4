@@ -104,7 +104,7 @@ router.get('/:id', authMiddleware, async (req, res) => {
 // POST /api/quizzes/:id/score — 점수 기록 + 업로더 100pt
 router.post('/:id/score', authMiddleware, async (req, res) => {
     try {
-        const { score, mode } = req.body;
+        const { score, mode, duration } = req.body; // duration in seconds
         if (score === undefined || !mode) {
             return res.status(400).json({ error: '점수와 모드가 필요합니다.' });
         }
@@ -118,11 +118,21 @@ router.post('/:id/score', authMiddleware, async (req, res) => {
             player: req.user.userId,
             score,
             mode,
+            duration: duration || 0,
         });
 
         // 플레이 카운트 증가
         quiz.playCount += 1;
         await quiz.save();
+
+        // 플레이어의 총 학습 시간 누적
+        if (duration > 0) {
+            const player = await User.findById(req.user.userId);
+            if (player) {
+                player.learningTime += duration;
+                await player.save();
+            }
+        }
 
         // 업로더에게 100pt (본인 제외)
         if (quiz.creator.toString() !== req.user.userId) {

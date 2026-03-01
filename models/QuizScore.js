@@ -5,6 +5,7 @@ const quizScoreSchema = new mongoose.Schema({
     player: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     score: { type: Number, required: true },
     mode: { type: String, enum: ['quiz', 'match', 'speed'], required: true },
+    duration: { type: Number, default: 0 }, // Time spent in seconds
     playedAt: { type: Date, default: Date.now },
 });
 

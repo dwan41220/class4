@@ -460,9 +460,19 @@ async function loadProfile() {
     currentUser = { id: data.user._id, username: data.user.username, points: data.user.points };
     updateSidebar();
 
+    const formatTime = (sec) => {
+      const h = Math.floor(sec / 3600);
+      const m = Math.floor((sec % 3600) / 60);
+      const s = sec % 60;
+      if (h > 0) return `${h}시간 ${m}분`;
+      if (m > 0) return `${m}분 ${s}초`;
+      return `${s}초`;
+    };
+
     $('profile-stats').innerHTML = `
       <div class="stat-card"><div class="value">${data.user.points?.toLocaleString()}</div><div class="label">보유 포인트</div></div>
-      <div class="stat-card"><div class="value">${data.user.totalEarned?.toLocaleString()}</div><div class="label">누적 획득</div></div>
+      <div class="stat-card"><div class="value">${data.user.learningTime ? formatTime(data.user.learningTime) : '0초'}</div><div class="label">학습 시간</div></div>
+      <div class="stat-card"><div class="value">${data.user.totalDownloads || 0}</div><div class="label">다운로드 수</div></div>
       <div class="stat-card"><div class="value">${data.followerCount}</div><div class="label">팔로워</div></div>
       <div class="stat-card"><div class="value">${data.followingCount}</div><div class="label">팔로잉</div></div>`;
 
@@ -1023,6 +1033,7 @@ let quizData = null;
 let quizQuestionIndex = 0;
 let quizScore = 0;
 let quizMode = '';
+let quizStartTime = 0;
 let speedTimer = null;
 let speedTimeLeft = 30;
 let quizQuestionCount = 0;
@@ -1300,6 +1311,7 @@ async function startQuizGame(id, mode) {
     quizMode = mode;
     quizScore = 0;
     quizQuestionIndex = 0;
+    quizStartTime = Date.now();
     $('quiz-game-title').textContent = quizData.title;
     show('quiz-game-container');
 
@@ -1498,8 +1510,9 @@ function checkSpeedAnswer(selected, correct) {
 
 // ─── 결과 화면 & 점수 제출 ───
 async function showQuizResult() {
+  const duration = Math.floor((Date.now() - quizStartTime) / 1000);
   try {
-    await api(`/api/quizzes/${quizData._id}/score`, { method: 'POST', body: { score: quizScore, mode: quizMode } });
+    await api(`/api/quizzes/${quizData._id}/score`, { method: 'POST', body: { score: quizScore, mode: quizMode, duration } });
   } catch (e) { }
 
   const modeNames = { quiz: '일반 퀴즈', match: '매칭 게임', speed: '스피드 퀴즈' };

@@ -4,6 +4,7 @@ const https = require('https');
 const http = require('http');
 const Worksheet = require('../models/Worksheet');
 const View = require('../models/View');
+const Download = require('../models/Download');
 const User = require('../models/User');
 const PointTransaction = require('../models/PointTransaction');
 const Config = require('../models/Config');
@@ -173,16 +174,16 @@ router.get('/:id', authMiddleware, async (req, res) => {
                 worksheet.views += 1;
                 await worksheet.save();
 
-                // 업로더에게 100포인트 지급
+                // 업로더에게 50포인트 지급 (기존 100 -> 50)
                 const uploader = await User.findById(worksheet.uploader._id);
-                uploader.points += 100;
-                uploader.totalEarned += 100;
+                uploader.points += 50;
+                uploader.totalEarned += 50;
                 await uploader.save();
 
                 await PointTransaction.create({
                     toUser: uploader._id,
                     fromUser: req.user.userId,
-                    amount: 100,
+                    amount: 50,
                     type: 'VIEW_REWARD',
                     description: `"${worksheet.title}" 조회 보상`,
                 });
@@ -208,8 +209,38 @@ router.get('/:id/download', authMiddleware, async (req, res) => {
             return res.status(404).json({ error: '파일 URL이 존재하지 않습니다.' });
         }
 
-        // Direct users straight to the Cloudinary/Google Drive link for downloading.
-        // This is much faster and saves server memory/bandwidth compared to proxying large ArrayBuffers.
+        // 본인 다운로드 제외, 중복 다운로드 포인트 지급 제외
+        if (worksheet.uploader.toString() !== req.user.userId) {
+            const existingDownload = await Download.findOne({ worksheet: worksheet._id, downloader: req.user.userId });
+            if (!existingDownload) {
+                // 다운로드 기록 생성
+                await Download.create({ worksheet: worksheet._id, downloader: req.user.userId });
+
+                // 업로더에게 1000포인트 지급
+                const uploader = await User.findById(worksheet.uploader);
+                if (uploader) {
+                    uploader.points += 1000;
+                    uploader.totalEarned += 1000;
+                    await uploader.save();
+
+                    await PointTransaction.create({
+                        toUser: uploader._id,
+                        fromUser: req.user.userId,
+                        amount: 1000,
+                        type: 'WORKSHEET_DOWNLOAD_REWARD',
+                        description: `"${worksheet.title}" 다운로드 보상`,
+                    });
+                }
+
+                // 다운로더의 누적 다운로드 수 증가
+                const downloader = await User.findById(req.user.userId);
+                if (downloader) {
+                    downloader.totalDownloads += 1;
+                    await downloader.save();
+                }
+            }
+        }
+
         res.json({ url: worksheet.fileUrl });
 
     } catch (err) {

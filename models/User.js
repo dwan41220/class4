@@ -6,6 +6,8 @@ const userSchema = new mongoose.Schema({
   isActivated: { type: Boolean, default: false },
   points: { type: Number, default: 0 },
   totalEarned: { type: Number, default: 0 },
+  learningTime: { type: Number, default: 0 }, // Total learning time in seconds
+  totalDownloads: { type: Number, default: 0 }, // Total unique worksheet downloads
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', userSchema);
