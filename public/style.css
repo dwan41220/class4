@@ -1243,7 +1243,7 @@ select.form-input {
 .desk-scene {
   position: relative;
   width: 100px;
-  height: 90px;
+  height: 100px;
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -1251,6 +1251,8 @@ select.form-input {
 
 .desk-img {
   width: 90px;
+  position: relative;
+  z-index: 3;
 }
 
 .desk-img svg {
@@ -1258,15 +1260,16 @@ select.form-input {
   height: auto;
 }
 
+/* Person sits ON TOP of the desk */
 .person-icon {
   position: absolute;
-  bottom: 28px;
+  bottom: 32px;
   left: 50%;
   transform: translateX(-50%);
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   color: #333;
-  z-index: 2;
+  z-index: 4;
 }
 
 .person-icon svg {
@@ -1297,129 +1300,160 @@ select.form-input {
   color: var(--text2);
 }
 
-/* ─── Fire Effect ─── */
+/* ─── Fire Effect — Engulfs the person ─── */
 .fire-effect {
   position: absolute;
-  bottom: 24px;
+  bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
-  width: 50px;
-  height: 60px;
-  z-index: 1;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
+  z-index: 3;
+  pointer-events: none;
 }
 
 .fire-flame {
   position: absolute;
   bottom: 0;
-  width: 18px;
-  height: 30px;
-  background: radial-gradient(ellipse at bottom, #ff6600 0%, #ff9900 40%, transparent 70%);
-  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
-  animation: flicker 0.8s ease-in-out infinite alternate;
-  opacity: 0.9;
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: 50% 50% 20% 20%;
+  animation: fireburn 1s ease-in-out infinite alternate;
+  opacity: 0.85;
 }
 
 .fire-flame.f2 {
-  left: 6px;
-  width: 14px;
-  height: 24px;
-  animation-delay: 0.2s;
-  background: radial-gradient(ellipse at bottom, #ff4400 0%, #ff7700 50%, transparent 70%);
+  animation-delay: 0.3s;
+  animation-duration: 0.8s;
 }
 
 .fire-flame.f3 {
-  right: 6px;
-  width: 14px;
-  height: 22px;
-  animation-delay: 0.4s;
-  background: radial-gradient(ellipse at bottom, #ff5500 0%, #ff8800 50%, transparent 70%);
+  animation-delay: 0.6s;
+  animation-duration: 1.2s;
 }
 
-/* Level 1: Small, subtle fire (< 1 hour) */
+/* Level 1: Small warm orange glow (< 1hr) */
 .fire-level-1 {
-  width: 30px;
-  height: 30px;
-  opacity: 0.6;
+  width: 36px;
+  height: 40px;
 }
 
 .fire-level-1 .fire-flame {
-  width: 12px;
-  height: 16px;
+  width: 28px;
+  height: 32px;
+  background: radial-gradient(ellipse at 50% 90%, #ff8800 0%, #ff6600 40%, rgba(255, 80, 0, 0.2) 70%, transparent 100%);
 }
 
 .fire-level-1 .fire-flame.f2 {
-  width: 10px;
-  height: 14px;
+  width: 20px;
+  height: 26px;
+  left: 30%;
+  background: radial-gradient(ellipse at 50% 90%, #ff9900 0%, #ff7700 50%, transparent 80%);
 }
 
 .fire-level-1 .fire-flame.f3 {
-  width: 8px;
-  height: 12px;
+  width: 18px;
+  height: 24px;
+  left: 70%;
+  background: radial-gradient(ellipse at 50% 90%, #ffaa00 0%, #ff8800 50%, transparent 80%);
 }
 
-/* Level 2: Medium fire (1-3 hours) */
+/* Level 2: Bigger, reddish-orange (1-3hr) */
 .fire-level-2 {
-  width: 40px;
-  height: 45px;
-  opacity: 0.8;
+  width: 44px;
+  height: 52px;
 }
 
 .fire-level-2 .fire-flame {
-  width: 16px;
-  height: 24px;
+  width: 36px;
+  height: 44px;
+  background: radial-gradient(ellipse at 50% 90%, #ff5500 0%, #ff3300 30%, #cc2200 60%, transparent 100%);
 }
 
-/* Level 3: Large fire (3-5 hours) */
+.fire-level-2 .fire-flame.f2 {
+  width: 26px;
+  height: 36px;
+  left: 25%;
+  background: radial-gradient(ellipse at 50% 90%, #ff6600 0%, #ee4400 50%, transparent 85%);
+}
+
+.fire-level-2 .fire-flame.f3 {
+  width: 24px;
+  height: 34px;
+  left: 75%;
+  background: radial-gradient(ellipse at 50% 90%, #ff7700 0%, #dd3300 50%, transparent 85%);
+}
+
+/* Level 3: Large, purple-ish (3-5hr) */
 .fire-level-3 {
-  width: 50px;
-  height: 55px;
-  opacity: 0.9;
+  width: 54px;
+  height: 62px;
 }
 
 .fire-level-3 .fire-flame {
-  width: 20px;
-  height: 32px;
-  filter: brightness(1.2);
+  width: 44px;
+  height: 54px;
+  background: radial-gradient(ellipse at 50% 90%, #cc33ff 0%, #9933cc 30%, #6622aa 60%, transparent 100%);
 }
 
-/* Level 4: Maximum fire (5+ hours) */
+.fire-level-3 .fire-flame.f2 {
+  width: 32px;
+  height: 44px;
+  left: 20%;
+  background: radial-gradient(ellipse at 50% 90%, #dd44ff 0%, #aa33dd 50%, transparent 85%);
+}
+
+.fire-level-3 .fire-flame.f3 {
+  width: 30px;
+  height: 42px;
+  left: 78%;
+  background: radial-gradient(ellipse at 50% 90%, #bb44ee 0%, #8833bb 50%, transparent 85%);
+}
+
+/* Level 4: Maximum — intense blue fire (5hr+) */
 .fire-level-4 {
-  width: 60px;
-  height: 65px;
-  opacity: 1;
+  width: 64px;
+  height: 72px;
 }
 
 .fire-level-4 .fire-flame {
-  width: 22px;
-  height: 38px;
-  filter: brightness(1.4) saturate(1.3);
-  animation-duration: 0.5s;
+  width: 52px;
+  height: 64px;
+  background: radial-gradient(ellipse at 50% 90%, #3399ff 0%, #2266dd 25%, #1144bb 50%, #0033aa 75%, transparent 100%);
+  animation-duration: 0.6s;
 }
 
 .fire-level-4 .fire-flame.f2 {
-  width: 18px;
-  height: 30px;
+  width: 40px;
+  height: 52px;
+  left: 18%;
+  background: radial-gradient(ellipse at 50% 90%, #44aaff 0%, #3388ee 40%, #1155cc 70%, transparent 100%);
 }
 
 .fire-level-4 .fire-flame.f3 {
-  width: 18px;
-  height: 28px;
+  width: 38px;
+  height: 50px;
+  left: 80%;
+  background: radial-gradient(ellipse at 50% 90%, #55bbff 0%, #3399dd 40%, #2266bb 70%, transparent 100%);
 }
 
-@keyframes flicker {
+@keyframes fireburn {
   0% {
-    transform: scaleY(1) scaleX(1) translateY(0);
+    transform: translateX(-50%) scaleY(1) scaleX(1);
+    opacity: 0.8;
   }
 
-  50% {
-    transform: scaleY(1.1) scaleX(0.9) translateY(-3px);
+  30% {
+    transform: translateX(-50%) scaleY(1.08) scaleX(0.95);
+    opacity: 0.9;
+  }
+
+  60% {
+    transform: translateX(-50%) scaleY(0.96) scaleX(1.04);
+    opacity: 0.85;
   }
 
   100% {
-    transform: scaleY(0.95) scaleX(1.05) translateY(-1px);
+    transform: translateX(-50%) scaleY(1.05) scaleX(0.97);
+    opacity: 0.9;
   }
 }
 
@@ -1431,7 +1465,7 @@ select.form-input {
 
   .desk-scene {
     width: 80px;
-    height: 70px;
+    height: 80px;
   }
 
   .desk-img {
@@ -1439,8 +1473,8 @@ select.form-input {
   }
 
   .person-icon {
-    width: 28px;
-    height: 28px;
-    bottom: 22px;
+    width: 26px;
+    height: 26px;
+    bottom: 26px;
   }
 }
