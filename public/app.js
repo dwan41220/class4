@@ -1595,17 +1595,27 @@ async function checkStaleSession() {
   } catch (e) { }
 }
 
+let timerTodayBase = 0; // seconds already studied today before current session
+
 async function loadTimerPage() {
   loadDeskView();
-  loadWeeklyRanking();
-  // Check if currently studying
+  // Check if currently studying + get today's cumulative time
   try {
     const res = await api('/api/timer/status');
+    timerTodayBase = res.todaySeconds || 0;
+
     if (res.studying && res.session) {
       timerStudying = true;
       timerSessionStart = new Date(res.session.startedAt);
+      // todayBase already includes current session elapsed from server
+      // Subtract current session so we don't double-count in tick
+      const sessionElapsed = Math.floor((Date.now() - timerSessionStart.getTime()) / 1000);
+      timerTodayBase = Math.max(0, timerTodayBase - sessionElapsed);
       updateTimerUI();
       startTimerCountup();
+    } else {
+      timerStudying = false;
+      updateTimerUI();
     }
   } catch (e) { }
 }
@@ -1628,15 +1638,18 @@ async function startStudyTimer() {
 async function stopStudyTimer() {
   try {
     await api('/api/timer/stop', { method: 'POST' });
+    // Update todayBase with whatever was accumulated
+    if (timerSessionStart) {
+      timerTodayBase += Math.floor((Date.now() - timerSessionStart.getTime()) / 1000);
+    }
     timerStudying = false;
     timerSessionStart = null;
     clearInterval(timerInterval);
     timerInterval = null;
     updateTimerUI();
-    toast('공부 종료! 수고하셨습니다.', 'success');
+    toast('공부 중단! 수고하셨습니다.', 'success');
     if (timerSocket) timerSocket.emit('study-stop', { username: currentUser.username });
     loadDeskView();
-    loadWeeklyRanking();
   } catch (e) {
     toast(e.message, 'error');
   }
@@ -1651,10 +1664,25 @@ function updateTimerUI() {
     stopBtn.style.display = '';
     statusCard.style.display = '';
   } else {
+    // Show start or continue button
+    if (timerTodayBase > 0) {
+      startBtn.textContent = '공부 이어하기';
+    } else {
+      startBtn.textContent = '공부 시작하기';
+    }
     startBtn.style.display = '';
     stopBtn.style.display = 'none';
-    statusCard.style.display = 'none';
-    $('timer-display').textContent = '00:00:00';
+    // Still show today total if studied today
+    if (timerTodayBase > 0) {
+      statusCard.style.display = '';
+      const h = String(Math.floor(timerTodayBase / 3600)).padStart(2, '0');
+      const m = String(Math.floor((timerTodayBase % 3600) / 60)).padStart(2, '0');
+      const s = String(timerTodayBase % 60).padStart(2, '0');
+      $('timer-display').textContent = `${h}:${m}:${s}`;
+    } else {
+      statusCard.style.display = 'none';
+      $('timer-display').textContent = '00:00:00';
+    }
   }
 }
 
@@ -1662,11 +1690,18 @@ function startTimerCountup() {
   if (timerInterval) clearInterval(timerInterval);
   function tick() {
     if (!timerSessionStart) return;
-    const elapsed = Math.floor((Date.now() - timerSessionStart.getTime()) / 1000);
-    const h = String(Math.floor(elapsed / 3600)).padStart(2, '0');
-    const m = String(Math.floor((elapsed % 3600) / 60)).padStart(2, '0');
-    const s = String(elapsed % 60).padStart(2, '0');
+    const sessionElapsed = Math.floor((Date.now() - timerSessionStart.getTime()) / 1000);
+    const total = timerTodayBase + sessionElapsed;
+    const h = String(Math.floor(total / 3600)).padStart(2, '0');
+    const m = String(Math.floor((total % 3600) / 60)).padStart(2, '0');
+    const s = String(total % 60).padStart(2, '0');
     $('timer-display').textContent = `${h}:${m}:${s}`;
+
+    // Update today total text
+    const totalH = Math.floor(total / 3600);
+    const totalM = Math.floor((total % 3600) / 60);
+    const el = $('timer-today-total');
+    if (el) el.textContent = `오늘 총 공부 시간: ${totalH}시간 ${totalM}분`;
   }
   tick();
   timerInterval = setInterval(tick, 1000);
@@ -1728,10 +1763,10 @@ async function loadDeskView() {
                 <polygon points="10,30 150,30 140,22 20,22" fill="${topColor}"/>
                 <polygon points="10,30 150,30 150,38 10,38" fill="${midColor}"/>
                 <polygon points="10,38 150,38 140,34 20,34" fill="${botColor}" opacity="0.7"/>
-                <rect x="18" y="38" width="5" height="55" rx="2" fill="#b0b0b0"/>
-                <rect x="137" y="38" width="5" height="55" rx="2" fill="#b0b0b0"/>
-                <rect x="26" y="32" width="4" height="45" rx="2" fill="#999"/>
-                <rect x="130" y="32" width="4" height="45" rx="2" fill="#999"/>
+                <rect x="14" y="38" width="6" height="55" rx="2" fill="#b0b0b0"/>
+                <rect x="140" y="38" width="6" height="55" rx="2" fill="#b0b0b0"/>
+                <rect x="24" y="30" width="5" height="47" rx="2" fill="#999"/>
+                <rect x="131" y="30" width="5" height="47" rx="2" fill="#999"/>
               </svg>
             </div>
           </div>

@@ -40,11 +40,30 @@ router.post('/stop', authMiddleware, async (req, res) => {
     }
 });
 
-// GET /api/timer/status — My current session status
+// GET /api/timer/status — My current session status + todaySeconds
 router.get('/status', authMiddleware, async (req, res) => {
     try {
         const session = await StudySession.findOne({ user: req.user.userId, endedAt: null });
-        res.json({ studying: !!session, session });
+
+        // Calculate today's total seconds
+        const now = new Date();
+        const kstOffset = 9 * 60 * 60 * 1000;
+        const kstNow = new Date(now.getTime() + kstOffset);
+        const todayStart = new Date(kstNow);
+        todayStart.setUTCHours(0, 0, 0, 0);
+        const todayStartUTC = new Date(todayStart.getTime() - kstOffset);
+
+        const todaySessions = await StudySession.find({
+            user: req.user.userId,
+            startedAt: { $gte: todayStartUTC },
+            endedAt: { $ne: null }
+        });
+        let todaySeconds = todaySessions.reduce((sum, s) => sum + (s.duration || 0), 0);
+        if (session) {
+            todaySeconds += Math.floor((now - session.startedAt) / 1000);
+        }
+
+        res.json({ studying: !!session, session, todaySeconds });
     } catch (err) {
         res.status(500).json({ error: '서버 오류' });
     }
