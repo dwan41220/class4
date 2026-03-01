@@ -51,43 +51,6 @@ router.get('/', async (req, res) => {
     }
 });
 
-// GET /api/quizzes/leaderboard/weekly — 주간 리더보드
-router.get('/leaderboard/weekly', authMiddleware, async (req, res) => {
-    try {
-        const oneWeekAgo = new Date();
-        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-
-        const leaderboard = await QuizScore.aggregate([
-            { $match: { playedAt: { $gte: oneWeekAgo } } },
-            { $group: { _id: '$player', totalScore: { $sum: '$score' }, gamesPlayed: { $sum: 1 } } },
-            { $sort: { totalScore: -1 } },
-            { $limit: 10 },
-            {
-                $lookup: {
-                    from: 'users',
-                    localField: '_id',
-                    foreignField: '_id',
-                    as: 'user'
-                }
-            },
-            { $unwind: '$user' },
-            {
-                $project: {
-                    _id: 1,
-                    totalScore: 1,
-                    gamesPlayed: 1,
-                    username: '$user.username',
-                }
-            }
-        ]);
-
-        res.json(leaderboard);
-    } catch (err) {
-        console.error('Leaderboard error:', err);
-        res.status(500).json({ error: '서버 오류' });
-    }
-});
-
 // GET /api/quizzes/ranking — 주간 퀴즈 랭킹 (no auth needed)
 router.get('/ranking', async (req, res) => {
     try {

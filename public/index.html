@@ -282,7 +282,6 @@
         <div class="flex gap-sm" style="margin-bottom:16px">
           <button class="quiz-main-tab sort-tab active" onclick="showQuizMainTab('play')">퀴즈 풀기</button>
           <button class="quiz-main-tab sort-tab" onclick="showQuizMainTab('create')">퀴즈 만들기</button>
-          <button class="quiz-main-tab sort-tab" onclick="showQuizMainTab('leaderboard')">주간 랭킹</button>
         </div>
 
         <!-- 퀴즈 풀기 섹션 -->
@@ -319,14 +318,7 @@
           </div>
         </div>
 
-        <!-- 주간 랭킹 섹션 -->
-        <div id="quiz-leaderboard-section" class="hidden">
-          <div class="card" style="max-width:500px">
-            <h3 style="margin-bottom:16px">이번 주 퀴즈 랭킹 TOP 10</h3>
-            <p style="font-size:.8rem;color:var(--text2);margin-bottom:16px">1등에게는 매주 1000pt가 지급됩니다!</p>
-            <div id="leaderboard-list" class="user-list"></div>
-          </div>
-        </div>
+        <!-- (Ranking section removed) -->
       </div>
 
       <!-- QUIZ GAME MODAL -->
@@ -361,14 +353,7 @@
           <button class="sort-tab" onclick="showTimerSubTab('studylog',this)">공부 기록</button>
         </div>
 
-        <div id="timer-my-status" class="card" style="margin-bottom:24px;text-align:center;display:none">
-          <h3 style="margin-bottom:8px">나의 공부 시간</h3>
-          <div id="timer-display"
-            style="font-size:3rem;font-weight:700;color:var(--primary);font-family:'Outfit',sans-serif;letter-spacing:2px">
-            00:00:00</div>
-          <p id="timer-today-total" style="color:var(--text2);margin-top:8px">오늘 총 공부 시간: 0시간 0분</p>
-        </div>
-
+        <!-- (Timer status moved to studylog sub-tab) -->
         <!-- Sub: 스터디룸 -->
         <div id="timer-sub-studyroom">
           <div class="card" style="margin-bottom:24px">
@@ -381,6 +366,14 @@
 
         <!-- Sub: 공부 기록 -->
         <div id="timer-sub-studylog" style="display:none">
+          <div id="timer-my-status" class="card" style="margin-bottom:24px;text-align:center;display:none">
+            <h3 style="margin-bottom:8px">나의 공부 시간</h3>
+            <div id="timer-display"
+              style="font-size:3rem;font-weight:700;color:var(--primary);font-family:'Outfit',sans-serif;letter-spacing:2px">
+              00:00:00</div>
+            <p id="timer-today-total" style="color:var(--text2);margin-top:8px">오늘 총 공부 시간: 0시간 0분</p>
+          </div>
+
           <div class="card">
             <h3 style="margin-bottom:16px">이번 주 공부 기록</h3>
             <div id="timer-weekly-log"></div>

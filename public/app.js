@@ -1057,11 +1057,9 @@ function showQuizMainTab(tab) {
   const tabBtns = document.querySelectorAll('.quiz-main-tab');
   if (tab === 'play') tabBtns[0].classList.add('active');
   if (tab === 'create') tabBtns[1].classList.add('active');
-  if (tab === 'leaderboard') tabBtns[2].classList.add('active');
 
   hide('quiz-play-section');
   hide('quiz-create-section');
-  hide('quiz-leaderboard-section');
   if (tab === 'play') { show('quiz-play-section'); loadQuizList(); }
   if (tab === 'create') {
     show('quiz-create-section');
@@ -1071,7 +1069,6 @@ function showQuizMainTab(tab) {
       initQuizForm();
     }
   }
-  if (tab === 'leaderboard') { show('quiz-leaderboard-section'); loadLeaderboard(); }
 }
 
 async function loadQuizList() {
@@ -1537,20 +1534,6 @@ async function showQuizResult() {
       </div>`;
 }
 
-// ─── 주간 리더보드 ───
-async function loadLeaderboard() {
-  try {
-    const data = await api('/api/quizzes/leaderboard/weekly');
-    $('leaderboard-list').innerHTML = data.length
-      ? data.map((u, i) => `
-          <div class="user-item">
-            <div class="avatar" style="${i === 0 ? 'background:linear-gradient(135deg,#f59e0b,#ef4444);color:white' : ''}">${i === 0 ? '1' : i + 1}</div>
-            <div class="name">${u.username}</div>
-            <div class="pts">${u.totalScore.toLocaleString()}점 (${u.gamesPlayed}판)</div>
-          </div>`).join('')
-      : '<p style="color:var(--text2);text-align:center;padding:20px">이번 주 기록이 없습니다.</p>';
-  } catch (e) { toast(e.message, 'error'); }
-}
 
 // ─── INIT ───
 (function init() {
