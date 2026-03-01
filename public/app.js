@@ -1752,22 +1752,11 @@ async function loadDeskView() {
             ` : ''}
             ${showPerson ? `
               <div class="person-icon">
-                <svg viewBox="0 0 60 50" fill="#222" xmlns="http://www.w3.org/2000/svg">
-                  <circle cx="30" cy="10" r="12"/>
-                  <ellipse cx="30" cy="38" rx="28" ry="18"/>
-                </svg>
+                <img src="/person.png" alt="person" draggable="false">
               </div>
             ` : ''}
             <div class="desk-img">
-              <svg viewBox="0 0 160 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <polygon points="10,30 150,30 140,22 20,22" fill="${topColor}"/>
-                <polygon points="10,30 150,30 150,38 10,38" fill="${midColor}"/>
-                <polygon points="10,38 150,38 140,34 20,34" fill="${botColor}" opacity="0.7"/>
-                <rect x="14" y="38" width="6" height="55" rx="2" fill="#b0b0b0"/>
-                <rect x="140" y="38" width="6" height="55" rx="2" fill="#b0b0b0"/>
-                <rect x="24" y="30" width="5" height="47" rx="2" fill="#999"/>
-                <rect x="131" y="30" width="5" height="47" rx="2" fill="#999"/>
-              </svg>
+              <img src="/desk.png" alt="desk" draggable="false">
             </div>
           </div>
           <div class="desk-name ${isMe ? 'desk-name-me' : ''}">${u.username}</div>
