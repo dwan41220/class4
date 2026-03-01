@@ -1843,21 +1843,6 @@ async function loadTransferPage() {
   if (currentUser) {
     $('transfer-my-points').textContent = currentUser.points?.toLocaleString() || '0';
   }
-
-  // Load user list for dropdown
-  const select = $('transfer-to');
-  try {
-    const users = await api('/api/users');
-    let html = '<option value="">받을 사람 선택...</option>';
-    users.forEach(u => {
-      // Exclude self and maybe admin (though admin can receive points, let's just exclude self)
-      if (currentUser && u.username === currentUser.username) return;
-      html += `<option value="${u.username}">${u.username}</option>`;
-    });
-    select.innerHTML = html;
-  } catch (err) {
-    select.innerHTML = '<option value="">불러오기 실패</option>';
-  }
 }
 
 async function sendTransfer() {
