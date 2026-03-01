@@ -468,29 +468,34 @@ async function loadProfile() {
     currentUser = { id: data.user._id, username: data.user.username, points: data.user.points };
     updateSidebar();
 
+    const formatTime = (sec) => {
+      const h = Math.floor(sec / 3600);
+      const m = Math.floor((sec % 3600) / 60);
+      const s = sec % 60;
+      if (h > 0) return `${h}시간 ${m}분`;
+      if (m > 0) return `${m}분 ${s}초`;
+      return `${s}초`;
+    };
+
     $('profile-stats').innerHTML = `
-      <div class="stat-card"><div class="value">${data.user.points?.toLocaleString()}</div><div class="label">보유 포인트</div></div>
-      <div class="stat-card"><div class="value">${data.highestScore?.toLocaleString() || 0}</div><div class="label">퀴즈 최고 점수</div></div>`;
+      <div class="stat-card" style="display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;">
+        <div class="value" style="font-size:1.8rem;">${data.worksheetsCount?.toLocaleString() || 0}개</div>
+        <div class="label">나의 학습지</div>
+      </div>
+      <div class="stat-card" style="display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;">
+        <div class="value" style="font-size:1.8rem;">${data.quizzesCount?.toLocaleString() || 0}개</div>
+        <div class="label">나의 퀴즈</div>
+      </div>
+      <div class="stat-card" style="display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;">
+        <div class="value" style="font-size:1.4rem;">${data.highestScore?.toLocaleString() || 0}점</div>
+        <div class="label">나의 퀴즈 기록 <span style="font-size:0.75rem;opacity:0.8;">(${data.quizPlaysCount || 0}판)</span></div>
+      </div>
+      <div class="stat-card" style="display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;">
+        <div class="value" style="font-size:1.4rem;">${data.user.learningTime ? formatTime(data.user.learningTime) : '0초'}</div>
+        <div class="label">나의 열품타 기록</div>
+      </div>`;
 
     $('profile-memo').value = data.user.memo || '';
-
-    $('top-worksheets').innerHTML = data.topWorksheets.length
-      ? data.topWorksheets.map((w, i) => `
-        <div class="user-item">
-          <div class="avatar" style="background:${['#2563eb', '#3b82f6', '#60a5fa'][i]};font-size:1rem">${['1st', '2nd', '3rd'][i]}</div>
-          <div class="name">${w.title} <span style="color:var(--text2);font-size:.8rem">(${w.subject?.name})</span></div>
-          <div class="pts">${w.views} views</div>
-        </div>`).join('')
-      : '<p style="color:var(--text2);font-size:.9rem;padding:0 8px">아직 업로드한 학습지가 없습니다.</p>';
-
-    $('top-quizzes').innerHTML = data.topQuizzes.length
-      ? data.topQuizzes.map((q, i) => `
-        <div class="user-item">
-          <div class="avatar" style="background:${['#10b981', '#34d399', '#6ee7b7'][i]};font-size:1rem">${['1st', '2nd', '3rd'][i]}</div>
-          <div class="name">${q.title} <span style="color:var(--text2);font-size:.8rem">(${q.subject?.name})</span></div>
-          <div class="pts">${q.playCount} plays</div>
-        </div>`).join('')
-      : '<p style="color:var(--text2);font-size:.9rem;padding:0 8px">아직 만든 퀴즈가 없습니다.</p>';
   } catch (e) { toast(e.message, 'error'); }
 }
 

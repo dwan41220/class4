@@ -15,22 +15,16 @@ router.get('/me', authMiddleware, async (req, res) => {
         const user = await User.findById(req.user.userId).select('-passwordHash');
         if (!user) return res.status(404).json({ error: '유저를 찾을 수 없습니다.' });
 
-        const topWorksheets = await Worksheet.find({ uploader: user._id })
-            .sort({ views: -1 })
-            .limit(3)
-            .populate('subject', 'name');
-
-        const topQuizzes = await Quiz.find({ creator: user._id })
-            .sort({ playCount: -1 })
-            .limit(3)
-            .populate('subject', 'name');
+        const worksheetsCount = await Worksheet.countDocuments({ uploader: user._id });
+        const quizzesCount = await Quiz.countDocuments({ creator: user._id });
 
         const highestScoreObj = await QuizScore.findOne({ player: user._id })
             .sort({ score: -1 })
             .select('score');
         const highestScore = highestScoreObj ? highestScoreObj.score : 0;
+        const quizPlaysCount = await QuizScore.countDocuments({ player: user._id });
 
-        res.json({ user, topWorksheets, topQuizzes, highestScore });
+        res.json({ user, worksheetsCount, quizzesCount, highestScore, quizPlaysCount });
     } catch (err) {
         res.status(500).json({ error: '서버 오류' });
     }
