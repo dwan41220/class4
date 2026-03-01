@@ -1494,4 +1494,9 @@ select.form-input {
     height: 34px;
     bottom: 40px;
   }
+
+  .fire-effect {
+    bottom: 40px;
+    transform: translateX(-50%) scale(0.85);
+  }
 }
