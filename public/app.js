@@ -199,12 +199,11 @@ function navigateTo(page) {
   document.querySelectorAll('.mobile-nav-item').forEach(n => n.classList.toggle('active', n.dataset.page === page));
   if (page === 'browse') loadSubjects();
   if (page === 'profile') loadProfile();
-  if (page === 'friends') loadFriendsPage();
-  if (page === 'classmates') loadClassmates();
-  if (page === 'history') loadHistory();
   if (page === 'upload') loadSubjectsForUpload();
   if (page === 'quiz') loadQuizPage();
   if (page === 'timer') loadTimerPage();
+  if (page === 'ranking') loadRankingPage();
+  if (page === 'transfer') loadTransferPage();
 }
 
 // ─── UPLOAD ───
@@ -1747,10 +1746,123 @@ async function loadDeskView() {
 }
 
 
-async function loadWeeklyRanking() {
+async function loadWeeklyRanking(targetEl) {
+  const elId = targetEl || 'timer-ranking';
   try {
     const ranking = await api('/api/timer/ranking');
-    const el = $('timer-ranking');
+    const el = $(elId);
+    if (!el) return;
+    if (!ranking.length) {
+      el.innerHTML = '<p style="color:var(--text2);font-size:.9rem">이번 주 공부 기록이 없습니다.</p>';
+      return;
+    }
+    el.innerHTML = renderRankingList(ranking, 'study');
+  } catch (e) {
+    const el = $(elId);
+    if (el) el.innerHTML = '<p style="color:var(--text2);font-size:.9rem">로딩 실패</p>';
+  }
+}
+
+function renderRankingList(items, type) {
+  return items.map((r, i) => {
+    const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`;
+    let valueStr = '';
+    if (type === 'study') {
+      const h = Math.floor(r.totalDuration / 3600);
+      const m = Math.floor((r.totalDuration % 3600) / 60);
+      valueStr = `${h}시간 ${m}분`;
+    } else if (type === 'quiz') {
+      valueStr = `${r.totalScore}점`;
+    } else if (type === 'worksheet') {
+      valueStr = `${r.totalViews}회`;
+    }
+    return `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:12px">
+          <span style="font-size:1.2rem;min-width:32px">${medal}</span>
+          <span style="font-weight:600">${r.username}</span>
+        </div>
+        <span style="color:var(--primary);font-weight:600;font-family:'Outfit',sans-serif">${valueStr}</span>
+      </div>
+    `;
+  }).join('');
+}
+
+// ─── RANKING PAGE ───
+async function loadRankingPage() {
+  // Study ranking
+  loadWeeklyRanking('ranking-study');
+
+  // Quiz ranking
+  try {
+    const quizData = await api('/api/quizzes/ranking');
+    const el = $('ranking-quiz');
+    if (!quizData.length) {
+      el.innerHTML = '<p style="color:var(--text2);font-size:.9rem">이번 주 퀴즈 기록이 없습니다.</p>';
+    } else {
+      el.innerHTML = renderRankingList(quizData, 'quiz');
+    }
+  } catch (e) {
+    $('ranking-quiz').innerHTML = '<p style="color:var(--text2);font-size:.9rem">로딩 실패</p>';
+  }
+
+  // Worksheet views ranking
+  try {
+    const wsData = await api('/api/worksheets/ranking');
+    const el = $('ranking-worksheet');
+    if (!wsData.length) {
+      el.innerHTML = '<p style="color:var(--text2);font-size:.9rem">학습지 기록이 없습니다.</p>';
+    } else {
+      el.innerHTML = renderRankingList(wsData, 'worksheet');
+    }
+  } catch (e) {
+    $('ranking-worksheet').innerHTML = '<p style="color:var(--text2);font-size:.9rem">로딩 실패</p>';
+  }
+}
+
+// ─── TRANSFER PAGE ───
+function loadTransferPage() {
+  if (currentUser) {
+    $('transfer-my-points').textContent = currentUser.points?.toLocaleString() || '0';
+  }
+}
+
+async function sendTransfer() {
+  const to = $('transfer-to').value.trim();
+  const amount = parseInt($('transfer-amount').value);
+  if (!to) return toast('받는 사람을 입력하세요.', 'error');
+  if (!amount || amount < 1) return toast('금액을 입력하세요.', 'error');
+  if (to === currentUser.username) return toast('자신에게 송금할 수 없습니다.', 'error');
+
+  try {
+    await api('/api/points/transfer', {
+      method: 'POST',
+      body: { toUsername: to, amount }
+    });
+    toast(`${to}님에게 ${amount}pt 송금 완료!`, 'success');
+    $('transfer-to').value = '';
+    $('transfer-amount').value = '';
+    await refreshUser();
+    loadTransferPage();
+  } catch (e) {
+    toast(e.message, 'error');
+  }
+}
+
+// ─── TIMER SUB-TABS ───
+function showTimerSubTab(tab, btn) {
+  document.querySelectorAll('[id^="timer-sub-"]').forEach(el => el.style.display = 'none');
+  $(`timer-sub-${tab}`).style.display = '';
+  btn.parentElement.querySelectorAll('.sort-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+
+  if (tab === 'studylog') loadWeeklyStudyLog();
+}
+
+async function loadWeeklyStudyLog() {
+  try {
+    const ranking = await api('/api/timer/ranking');
+    const el = $('timer-weekly-log');
     if (!ranking.length) {
       el.innerHTML = '<p style="color:var(--text2);font-size:.9rem">이번 주 공부 기록이 없습니다.</p>';
       return;
@@ -1759,17 +1871,19 @@ async function loadWeeklyRanking() {
       const h = Math.floor(r.totalDuration / 3600);
       const m = Math.floor((r.totalDuration % 3600) / 60);
       const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`;
+      const isMe = r.username === currentUser.username;
       return `
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);${isMe ? 'background:#f0f7ff;padding-left:8px;padding-right:8px;border-radius:8px' : ''}">
           <div style="display:flex;align-items:center;gap:12px">
             <span style="font-size:1.2rem;min-width:32px">${medal}</span>
-            <span style="font-weight:600">${r.username}</span>
+            <span style="font-weight:600;${isMe ? 'color:var(--primary)' : ''}">${r.username}${isMe ? ' (나)' : ''}</span>
           </div>
           <span style="color:var(--primary);font-weight:600;font-family:'Outfit',sans-serif">${h}시간 ${m}분</span>
         </div>
       `;
     }).join('');
   } catch (e) {
-    $('timer-ranking').innerHTML = '<p style="color:var(--text2);font-size:.9rem">로딩 실패</p>';
+    $('timer-weekly-log').innerHTML = '<p style="color:var(--text2);font-size:.9rem">로딩 실패</p>';
   }
 }
+

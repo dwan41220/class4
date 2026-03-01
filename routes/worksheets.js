@@ -14,6 +14,23 @@ const { uploadFile, uploadImage, cloudinary } = require('../config/cloudinary');
 const { drive, uploadToGoogleDrive } = require('../config/gdrive');
 const multer = require('multer');
 
+// GET /api/worksheets/ranking — 학습지 조회수 랭킹
+router.get('/ranking', async (req, res) => {
+    try {
+        const ranking = await Worksheet.aggregate([
+            { $group: { _id: '$uploader', totalViews: { $sum: '$views' } } },
+            { $sort: { totalViews: -1 } },
+            { $limit: 10 },
+            { $lookup: { from: 'users', localField: '_id', foreignField: '_id', as: 'user' } },
+            { $unwind: '$user' },
+            { $project: { _id: 1, totalViews: 1, username: '$user.username' } }
+        ]);
+        res.json(ranking);
+    } catch (err) {
+        res.status(500).json({ error: '서버 오류' });
+    }
+});
+
 // POST /api/worksheets — 업로드 (파일 + 썸네일)
 const uploadFields = (req, res, next) => {
     const upload = multer({

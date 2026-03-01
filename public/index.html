@@ -124,23 +124,20 @@
         <div class="nav-item" data-page="browse" onclick="navigateTo('browse')">
           다운로드
         </div>
-        <div class="nav-item" data-page="friends" onclick="navigateTo('friends')">
-          친구
-        </div>
-        <div class="nav-item" data-page="classmates" onclick="navigateTo('classmates')">
-          학우들
+        <div class="nav-item" data-page="transfer" onclick="navigateTo('transfer')">
+          송금
         </div>
         <div class="nav-item" data-page="profile" onclick="navigateTo('profile')">
           계정
-        </div>
-        <div class="nav-item" data-page="history" onclick="navigateTo('history')">
-          포인트 기록
         </div>
         <div class="nav-item" data-page="quiz" onclick="navigateTo('quiz')">
           퀴즈
         </div>
         <div class="nav-item" data-page="timer" onclick="navigateTo('timer')">
           열품타
+        </div>
+        <div class="nav-item" data-page="ranking" onclick="navigateTo('ranking')">
+          랭킹
         </div>
       </nav>
       <div class="sidebar-footer">
@@ -354,8 +351,14 @@
           <div>
             <button id="timer-start-btn" class="btn btn-primary" onclick="startStudyTimer()">공부 시작하기</button>
             <button id="timer-stop-btn" class="btn btn-secondary" onclick="stopStudyTimer()" style="display:none">공부
-              종료하기</button>
+              중단하기</button>
           </div>
+        </div>
+
+        <!-- Sub Tabs -->
+        <div class="sort-tabs" style="margin-bottom:20px">
+          <button class="sort-tab active" onclick="showTimerSubTab('studyroom',this)">스터디룸</button>
+          <button class="sort-tab" onclick="showTimerSubTab('studylog',this)">공부 기록</button>
         </div>
 
         <div id="timer-my-status" class="card" style="margin-bottom:24px;text-align:center;display:none">
@@ -366,17 +369,65 @@
           <p id="timer-today-total" style="color:var(--text2);margin-top:8px">오늘 총 공부 시간: 0시간 0분</p>
         </div>
 
-        <div class="card" style="margin-bottom:24px">
-          <h3 style="margin-bottom:16px">스터디룸</h3>
-          <div id="desk-grid" class="desk-grid">
-            <p style="color:var(--text2);font-size:.9rem">로딩 중...</p>
+        <!-- Sub: 스터디룸 -->
+        <div id="timer-sub-studyroom">
+          <div class="card" style="margin-bottom:24px">
+            <h3 style="margin-bottom:16px">스터디룸</h3>
+            <div id="desk-grid" class="desk-grid">
+              <p style="color:var(--text2);font-size:.9rem">로딩 중...</p>
+            </div>
           </div>
         </div>
 
+        <!-- Sub: 공부 기록 -->
+        <div id="timer-sub-studylog" style="display:none">
+          <div class="card">
+            <h3 style="margin-bottom:16px">이번 주 공부 기록</h3>
+            <div id="timer-weekly-log"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RANKING PAGE -->
+      <div id="page-ranking" class="page hidden">
+        <div class="page-header">
+          <h2>랭킹</h2>
+          <p>주간 랭킹 — 매주 월요일 자동 집계</p>
+        </div>
+        <div class="card" style="margin-bottom:20px">
+          <h3 style="margin-bottom:12px">열품타 공부왕 TOP 10 <span
+              style="font-size:.8rem;font-weight:400;color:var(--text2)">1등 2000pt</span></h3>
+          <div id="ranking-study"></div>
+        </div>
+        <div class="card" style="margin-bottom:20px">
+          <h3 style="margin-bottom:12px">퀴즈 랭킹 TOP 10 <span
+              style="font-size:.8rem;font-weight:400;color:var(--text2)">1등 1000pt</span></h3>
+          <div id="ranking-quiz"></div>
+        </div>
         <div class="card">
-          <h3 style="margin-bottom:16px">이번 주 공부왕 TOP 10</h3>
-          <p style="color:var(--text2);font-size:.85rem;margin-bottom:12px">매주 월요일 자동 집계 — 1등에게 2000pt 지급!</p>
-          <div id="timer-ranking"></div>
+          <h3 style="margin-bottom:12px">학습지 조회수 TOP 10</h3>
+          <div id="ranking-worksheet"></div>
+        </div>
+      </div>
+
+      <!-- TRANSFER PAGE (송금) -->
+      <div id="page-transfer" class="page hidden">
+        <div class="page-header">
+          <h2>포인트 송금</h2>
+          <p>다른 사용자에게 포인트를 전송하세요 (수수료 8%)</p>
+        </div>
+        <div class="card" style="max-width:400px">
+          <div class="form-group">
+            <label>받는 사람 (사용자명)</label>
+            <input type="text" id="transfer-to" placeholder="사용자명 입력">
+          </div>
+          <div class="form-group">
+            <label>금액</label>
+            <input type="number" id="transfer-amount" placeholder="포인트" min="1">
+          </div>
+          <p style="color:var(--text2);font-size:.85rem;margin-bottom:12px">내 포인트: <strong
+              id="transfer-my-points">0</strong>pt</p>
+          <button class="btn btn-primary btn-full" onclick="sendTransfer()">송금하기</button>
         </div>
       </div>
     </main>
@@ -391,11 +442,8 @@
         <div class="mobile-nav-item" data-page="browse" onclick="navigateTo('browse')">
           탐색
         </div>
-        <div class="mobile-nav-item" data-page="friends" onclick="navigateTo('friends')">
-          친구
-        </div>
-        <div class="mobile-nav-item" data-page="classmates" onclick="navigateTo('classmates')">
-          학우
+        <div class="mobile-nav-item" data-page="transfer" onclick="navigateTo('transfer')">
+          송금
         </div>
         <div class="mobile-nav-item" data-page="profile" onclick="navigateTo('profile')">
           계정
@@ -405,6 +453,9 @@
         </div>
         <div class="mobile-nav-item" data-page="timer" onclick="navigateTo('timer')">
           열품타
+        </div>
+        <div class="mobile-nav-item" data-page="ranking" onclick="navigateTo('ranking')">
+          랭킹
         </div>
       </div>
     </nav>

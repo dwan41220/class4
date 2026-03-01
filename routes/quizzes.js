@@ -88,6 +88,30 @@ router.get('/leaderboard/weekly', authMiddleware, async (req, res) => {
     }
 });
 
+// GET /api/quizzes/ranking — 주간 퀴즈 랭킹 (no auth needed)
+router.get('/ranking', async (req, res) => {
+    try {
+        const now = new Date();
+        const dayOfWeek = now.getDay();
+        const thisMonday = new Date(now);
+        thisMonday.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+        thisMonday.setHours(0, 0, 0, 0);
+
+        const leaderboard = await QuizScore.aggregate([
+            { $match: { playedAt: { $gte: thisMonday } } },
+            { $group: { _id: '$player', totalScore: { $sum: '$score' }, gamesPlayed: { $sum: 1 } } },
+            { $sort: { totalScore: -1 } },
+            { $limit: 10 },
+            { $lookup: { from: 'users', localField: '_id', foreignField: '_id', as: 'user' } },
+            { $unwind: '$user' },
+            { $project: { _id: 1, totalScore: 1, gamesPlayed: 1, username: '$user.username' } }
+        ]);
+        res.json(leaderboard);
+    } catch (err) {
+        res.status(500).json({ error: '서버 오류' });
+    }
+});
+
 // GET /api/quizzes/:id — 퀴즈 상세 (게임용)
 router.get('/:id', authMiddleware, async (req, res) => {
     try {
