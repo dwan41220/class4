@@ -502,11 +502,17 @@ async function loadProfile() {
         <div class="label">나의 퀴즈 기록 <span style="font-size:0.75rem;opacity:0.8;">(${data.quizPlaysCount || 0}판)</span></div>
       </div>
       <div class="stat-card" style="display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;">
-        <div class="value" style="font-size:1.4rem;">${data.user.learningTime ? formatTime(data.user.learningTime) : '0초'}</div>
+        <div class="value" style="font-size:1.4rem;">${data.user.highestStudyTime ? formatTime(data.user.highestStudyTime) : '0초'}</div>
         <div class="label">나의 열품타 기록</div>
       </div>`;
 
-    $('profile-memo').value = data.user.memo || '';
+    const memoEl = $('profile-memo');
+    memoEl.value = data.user.memo || '';
+    // Auto-expand textarea on load
+    setTimeout(() => {
+      memoEl.style.height = '120px'; // Reset to min-height
+      memoEl.style.height = memoEl.scrollHeight + 'px';
+    }, 10);
   } catch (e) { toast(e.message, 'error'); }
 }
 

@@ -124,9 +124,6 @@
         <div class="nav-item" data-page="drive" onclick="navigateTo('drive')">
           학습지 드라이브
         </div>
-        <div class="nav-item" data-page="transfer" onclick="navigateTo('transfer')">
-          송금
-        </div>
         <div class="nav-item" data-page="quiz" onclick="navigateTo('quiz')">
           퀴즈
         </div>
@@ -135,6 +132,9 @@
         </div>
         <div class="nav-item" data-page="ranking" onclick="navigateTo('ranking')">
           랭킹
+        </div>
+        <div class="nav-item" data-page="transfer" onclick="navigateTo('transfer')">
+          송금
         </div>
       </nav>
       <div class="sidebar-footer">
@@ -231,7 +231,8 @@
               style="background: rgba(255,255,255,0.2); border-color: transparent; color: #fff;"
               onclick="saveMemo()">저장</button>
           </div>
-          <textarea id="profile-memo" class="chalkboard-input" placeholder="칠판에 메모를 남겨보세요..."></textarea>
+          <textarea id="profile-memo" class="chalkboard-input" placeholder="칠판에 메모를 남겨보세요..."
+            oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'"></textarea>
         </div>
       </div>
 
@@ -445,9 +446,6 @@
         <div class="mobile-nav-item" data-page="drive" onclick="navigateTo('drive')">
           학습지 드라이브
         </div>
-        <div class="mobile-nav-item" data-page="transfer" onclick="navigateTo('transfer')">
-          송금
-        </div>
         <div class="mobile-nav-item" data-page="quiz" onclick="navigateTo('quiz')">
           퀴즈
         </div>
@@ -456,6 +454,9 @@
         </div>
         <div class="mobile-nav-item" data-page="ranking" onclick="navigateTo('ranking')">
           랭킹
+        </div>
+        <div class="mobile-nav-item" data-page="transfer" onclick="navigateTo('transfer')">
+          송금
         </div>
       </div>
     </nav>

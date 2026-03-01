@@ -33,6 +33,29 @@ router.post('/stop', authMiddleware, async (req, res) => {
         session.duration = Math.floor((session.endedAt - session.startedAt) / 1000);
         await session.save();
 
+        // Calculate today's total seconds to update highest record
+        const now = new Date();
+        const kstOffset = 9 * 60 * 60 * 1000;
+        const kstNow = new Date(now.getTime() + kstOffset);
+        const todayStart = new Date(kstNow);
+        todayStart.setUTCHours(0, 0, 0, 0);
+        const todayStartUTC = new Date(todayStart.getTime() - kstOffset);
+
+        const todaySessions = await StudySession.find({
+            user: req.user.userId,
+            startedAt: { $gte: todayStartUTC },
+            endedAt: { $ne: null }
+        });
+        const todaySeconds = todaySessions.reduce((acc, s) => acc + (s.duration || 0), 0);
+
+        const user = await User.findById(req.user.userId);
+        if (user) {
+            if (todaySeconds > (user.highestStudyTime || 0)) {
+                user.highestStudyTime = todaySeconds;
+                await user.save();
+            }
+        }
+
         res.json(session);
     } catch (err) {
         console.error(err);

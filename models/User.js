@@ -7,6 +7,7 @@ const userSchema = new mongoose.Schema({
   points: { type: Number, default: 0 },
   totalEarned: { type: Number, default: 0 },
   learningTime: { type: Number, default: 0 }, // Total learning time in seconds
+  highestStudyTime: { type: Number, default: 0 }, // Highest daily cumulative study time in seconds
   totalDownloads: { type: Number, default: 0 }, // Total unique worksheet downloads
   memo: { type: String, default: '' },
 }, { timestamps: true });
