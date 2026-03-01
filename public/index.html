@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <script src="/socket.io/socket.io.js"></script>
 </head>
 
 <body>
@@ -137,6 +138,9 @@
         </div>
         <div class="nav-item" data-page="quiz" onclick="navigateTo('quiz')">
           퀴즈
+        </div>
+        <div class="nav-item" data-page="timer" onclick="navigateTo('timer')">
+          열품타
         </div>
       </nav>
       <div class="sidebar-footer">
@@ -339,7 +343,44 @@
           <div id="quiz-game-area"></div>
         </div>
       </div>
+
+      <!-- TIMER PAGE (열품타) -->
+      <div id="page-timer" class="page hidden">
+        <div class="page-header flex justify-between items-center">
+          <div>
+            <h2>열품타</h2>
+            <p>열정을 품은 타이머 — 친구들과 함께 공부 시간을 기록하세요!</p>
+          </div>
+          <div>
+            <button id="timer-start-btn" class="btn btn-primary" onclick="startStudyTimer()">공부 시작하기</button>
+            <button id="timer-stop-btn" class="btn btn-secondary" onclick="stopStudyTimer()" style="display:none">공부
+              종료하기</button>
+          </div>
+        </div>
+
+        <div id="timer-my-status" class="card" style="margin-bottom:24px;text-align:center;display:none">
+          <h3 style="margin-bottom:8px">나의 공부 시간</h3>
+          <div id="timer-display"
+            style="font-size:3rem;font-weight:700;color:var(--primary);font-family:'Outfit',sans-serif;letter-spacing:2px">
+            00:00:00</div>
+          <p id="timer-today-total" style="color:var(--text2);margin-top:8px">오늘 총 공부 시간: 0시간 0분</p>
+        </div>
+
+        <div class="card" style="margin-bottom:24px">
+          <h3 style="margin-bottom:16px">스터디룸</h3>
+          <div id="desk-grid" class="desk-grid">
+            <p style="color:var(--text2);font-size:.9rem">로딩 중...</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 style="margin-bottom:16px">이번 주 공부왕 TOP 10</h3>
+          <p style="color:var(--text2);font-size:.85rem;margin-bottom:12px">매주 월요일 자동 집계 — 1등에게 2000pt 지급!</p>
+          <div id="timer-ranking"></div>
+        </div>
+      </div>
     </main>
+
 
     <!-- Mobile Nav -->
     <nav class="mobile-nav">
@@ -361,6 +402,9 @@
         </div>
         <div class="mobile-nav-item" data-page="quiz" onclick="navigateTo('quiz')">
           퀴즈
+        </div>
+        <div class="mobile-nav-item" data-page="timer" onclick="navigateTo('timer')">
+          열품타
         </div>
       </div>
     </nav>

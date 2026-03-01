@@ -21,6 +21,7 @@ app.use('/api/users', require('./routes/users'));
 app.use('/api/follows', require('./routes/follows'));
 app.use('/api/points', require('./routes/points'));
 app.use('/api/quizzes', require('./routes/quizzes'));
+app.use('/api/timer', require('./routes/studyTimer'));
 
 // SPA fallback
 app.get('/{*path}', (req, res) => {
@@ -29,18 +30,37 @@ app.get('/{*path}', (req, res) => {
 
 // Connect to MongoDB and start server
 const PORT = process.env.PORT || 3000;
+const http = require('http');
+const server = http.createServer(app);
+const { Server } = require('socket.io');
+const io = new Server(server, { cors: { origin: '*' } });
+
+// Socket.io — 열품타 실시간 상태 브로드캐스트
+io.on('connection', (socket) => {
+    socket.on('study-start', (data) => {
+        socket.broadcast.emit('study-status-updated', data);
+    });
+    socket.on('study-stop', (data) => {
+        socket.broadcast.emit('study-status-updated', data);
+    });
+});
+
 mongoose.connect(process.env.MONGODB_URI)
     .then(async () => {
         console.log('✅ MongoDB 연결 성공!');
 
-        // 주간 리더보드 1등 자동 보상 체크
+        // 주간 퀴즈 리더보드 1등 자동 보상 체크
         await checkWeeklyReward();
-        // 6시간마다 반복 체크
         setInterval(checkWeeklyReward, 6 * 60 * 60 * 1000);
 
-        app.listen(PORT, () => {
+        // 주간 공부왕 보상 체크 + 12시간 초과 세션 자동 종료 (1시간마다)
+        await checkWeeklyStudyReward();
+        await closeStaleStudySessions();
+        setInterval(checkWeeklyStudyReward, 60 * 60 * 1000);
+        setInterval(closeStaleStudySessions, 60 * 60 * 1000);
+
+        server.listen(PORT, () => {
             console.log(`🚀 서버 실행 중: http://localhost:${PORT}`);
-            // 서버 깨우기 봇 시작
             startKeepAlive();
         });
     })
@@ -121,7 +141,6 @@ function startKeepAlive() {
 
     console.log(`🤖 [Keep-Alive Bot] 작동 중... (대상: ${url})`);
 
-    // 14분마다 핑 (Render 등 무료 티어 15분 미활동 시 중지 방지)
     setInterval(() => {
         const protocol = url.startsWith('https') ? require('https') : require('http');
         protocol.get(url, (res) => {
@@ -130,4 +149,96 @@ function startKeepAlive() {
             console.error('📡 [Keep-Alive] 핑 실패:', err.message);
         });
     }, 14 * 60 * 1000);
+}
+
+// 주간 공부왕 보상 (매주 월요일 00시대, 2000pt)
+async function checkWeeklyStudyReward() {
+    try {
+        const Config = require('./models/Config');
+        const StudySession = require('./models/StudySession');
+        const User = require('./models/User');
+        const PointTransaction = require('./models/PointTransaction');
+
+        const now = new Date();
+        const kstOffset = 9 * 60 * 60 * 1000;
+        const kstNow = new Date(now.getTime() + kstOffset);
+        const day = kstNow.getUTCDay();
+        const hour = kstNow.getUTCHours();
+
+        // 월요일 0시대에만 실행
+        if (day !== 1 || hour !== 0) return;
+
+        // 지난주 월~일 계산
+        const thisMonday = new Date(kstNow);
+        thisMonday.setUTCHours(0, 0, 0, 0);
+        const lastMonday = new Date(thisMonday);
+        lastMonday.setUTCDate(thisMonday.getUTCDate() - 7);
+
+        const thisMondayUTC = new Date(thisMonday.getTime() - kstOffset);
+        const lastMondayUTC = new Date(lastMonday.getTime() - kstOffset);
+
+        const rewardKey = `weekly_study_reward_${lastMonday.toISOString().split('T')[0]}`;
+        const existing = await Config.findOne({ key: rewardKey });
+        if (existing) return;
+
+        const ranking = await StudySession.aggregate([
+            { $match: { startedAt: { $gte: lastMondayUTC, $lt: thisMondayUTC }, endedAt: { $ne: null } } },
+            { $group: { _id: '$user', totalDuration: { $sum: '$duration' } } },
+            { $sort: { totalDuration: -1 } },
+            { $limit: 1 },
+        ]);
+
+        if (ranking.length === 0) {
+            console.log('📖 지난주 공부 기록 없음 — 보상 스킵');
+            return;
+        }
+
+        const winnerId = ranking[0]._id;
+        const totalSeconds = ranking[0].totalDuration;
+        const totalHours = (totalSeconds / 3600).toFixed(1);
+
+        const winner = await User.findById(winnerId);
+        if (!winner) return;
+
+        winner.points += 2000;
+        winner.totalEarned += 2000;
+        await winner.save();
+
+        await PointTransaction.create({
+            toUser: winner._id,
+            amount: 2000,
+            type: 'WEEKLY_STUDY_REWARD',
+            description: `주간 공부왕 보상 (${totalHours}시간)`,
+        });
+
+        await Config.create({ key: rewardKey, value: { winnerId: winner._id, hours: totalHours } });
+        console.log(`🏆 주간 공부왕 보상 완료! ${winner.username} → 2000pt (${totalHours}시간)`);
+    } catch (err) {
+        console.error('주간 공부 보상 체크 오류:', err.message);
+    }
+}
+
+// 12시간 초과 세션 자동 종료
+async function closeStaleStudySessions() {
+    try {
+        const StudySession = require('./models/StudySession');
+        const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000);
+
+        const staleSessions = await StudySession.find({
+            endedAt: null,
+            startedAt: { $lt: twelveHoursAgo }
+        });
+
+        for (const session of staleSessions) {
+            session.endedAt = new Date(session.startedAt.getTime() + 12 * 60 * 60 * 1000);
+            session.duration = 12 * 60 * 60; // cap at 12 hours
+            await session.save();
+        }
+
+        if (staleSessions.length > 0) {
+            console.log(`⏰ ${staleSessions.length}개의 12시간 초과 세션 자동 종료`);
+        }
+    } catch (err) {
+        console.error('세션 자동 종료 오류:', err.message);
+    }
 }

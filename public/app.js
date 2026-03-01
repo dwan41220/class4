@@ -9,6 +9,12 @@ let authMode = 'check'; // check → activate → login
 let authUserActivated = false;
 let isUploading = false;
 
+// 열품타 globals
+let timerSocket = null;
+let timerInterval = null;
+let timerStudying = false;
+let timerSessionStart = null;
+
 // ─── HELPERS ───
 function togglePw(inputId, btn) {
   const input = document.getElementById(inputId);
@@ -162,6 +168,8 @@ function showDashboard() {
   updateSidebar();
   navigateTo('upload');
   loadSubjectsForUpload();
+  initTimerSocket();
+  checkStaleSession();
 }
 
 function updateSidebar() {
@@ -196,6 +204,7 @@ function navigateTo(page) {
   if (page === 'history') loadHistory();
   if (page === 'upload') loadSubjectsForUpload();
   if (page === 'quiz') loadQuizPage();
+  if (page === 'timer') loadTimerPage();
 }
 
 // ─── UPLOAD ───
@@ -1552,3 +1561,194 @@ async function loadLeaderboard() {
     showDashboard();
   }
 })();
+
+// ─── 열품타 (Study Timer) ───
+
+function initTimerSocket() {
+  if (timerSocket) return;
+  timerSocket = io();
+  timerSocket.on('study-status-updated', () => {
+    // Refresh desk view when any user starts/stops
+    if (currentPage === 'timer') {
+      loadDeskView();
+    }
+  });
+}
+
+async function checkStaleSession() {
+  try {
+    const res = await api('/api/timer/status');
+    if (res.studying && res.session) {
+      const elapsed = (Date.now() - new Date(res.session.startedAt).getTime()) / 1000;
+      const hours = Math.floor(elapsed / 3600);
+      const mins = Math.floor((elapsed % 3600) / 60);
+      if (confirm(`이전 공부 세션이 아직 열려있습니다. (${hours}시간 ${mins}분 경과)\n종료할까요?`)) {
+        await api('/api/timer/stop', { method: 'POST' });
+        toast('이전 공부 세션이 종료되었습니다.', 'success');
+      } else {
+        // Resume: show timer
+        timerStudying = true;
+        timerSessionStart = new Date(res.session.startedAt);
+        updateTimerUI();
+        startTimerCountup();
+      }
+    }
+  } catch (e) { }
+}
+
+async function loadTimerPage() {
+  loadDeskView();
+  loadWeeklyRanking();
+  // Check if currently studying
+  try {
+    const res = await api('/api/timer/status');
+    if (res.studying && res.session) {
+      timerStudying = true;
+      timerSessionStart = new Date(res.session.startedAt);
+      updateTimerUI();
+      startTimerCountup();
+    }
+  } catch (e) { }
+}
+
+async function startStudyTimer() {
+  try {
+    const res = await api('/api/timer/start', { method: 'POST' });
+    timerStudying = true;
+    timerSessionStart = new Date(res.startedAt);
+    updateTimerUI();
+    startTimerCountup();
+    toast('공부 시작! 파이팅!', 'success');
+    if (timerSocket) timerSocket.emit('study-start', { username: currentUser.username });
+    loadDeskView();
+  } catch (e) {
+    toast(e.message, 'error');
+  }
+}
+
+async function stopStudyTimer() {
+  try {
+    await api('/api/timer/stop', { method: 'POST' });
+    timerStudying = false;
+    timerSessionStart = null;
+    clearInterval(timerInterval);
+    timerInterval = null;
+    updateTimerUI();
+    toast('공부 종료! 수고하셨습니다.', 'success');
+    if (timerSocket) timerSocket.emit('study-stop', { username: currentUser.username });
+    loadDeskView();
+    loadWeeklyRanking();
+  } catch (e) {
+    toast(e.message, 'error');
+  }
+}
+
+function updateTimerUI() {
+  const startBtn = $('timer-start-btn');
+  const stopBtn = $('timer-stop-btn');
+  const statusCard = $('timer-my-status');
+  if (timerStudying) {
+    startBtn.style.display = 'none';
+    stopBtn.style.display = '';
+    statusCard.style.display = '';
+  } else {
+    startBtn.style.display = '';
+    stopBtn.style.display = 'none';
+    statusCard.style.display = 'none';
+    $('timer-display').textContent = '00:00:00';
+  }
+}
+
+function startTimerCountup() {
+  if (timerInterval) clearInterval(timerInterval);
+  function tick() {
+    if (!timerSessionStart) return;
+    const elapsed = Math.floor((Date.now() - timerSessionStart.getTime()) / 1000);
+    const h = String(Math.floor(elapsed / 3600)).padStart(2, '0');
+    const m = String(Math.floor((elapsed % 3600) / 60)).padStart(2, '0');
+    const s = String(elapsed % 60).padStart(2, '0');
+    $('timer-display').textContent = `${h}:${m}:${s}`;
+  }
+  tick();
+  timerInterval = setInterval(tick, 1000);
+}
+
+async function loadDeskView() {
+  try {
+    const users = await api('/api/timer/room');
+    const grid = $('desk-grid');
+    if (!users.length) {
+      grid.innerHTML = '<p style="color:var(--text2);font-size:.9rem">등록된 계정이 없습니다.</p>';
+      return;
+    }
+    grid.innerHTML = users.map(u => {
+      const isMe = u._id === currentUser.id;
+      const todayH = Math.floor(u.todaySeconds / 3600);
+      const todayM = Math.floor((u.todaySeconds % 3600) / 60);
+      const timeStr = u.todaySeconds > 0 ? `${todayH}시간 ${todayM}분` : '';
+
+      // Update my today total if this is me
+      if (isMe && timerStudying) {
+        const el = $('timer-today-total');
+        if (el) el.textContent = `오늘 총 공부 시간: ${todayH}시간 ${todayM}분`;
+      }
+
+      return `
+        <div class="desk-card ${isMe ? 'desk-card-me' : ''}">
+          <div class="desk-scene">
+            ${u.studying ? `
+              <div class="fire-effect fire-level-${u.fireLevel}">
+                <div class="fire-flame"></div>
+                <div class="fire-flame f2"></div>
+                <div class="fire-flame f3"></div>
+              </div>
+              <div class="person-icon">
+                <svg viewBox="0 0 64 64" fill="currentColor"><circle cx="32" cy="20" r="12"/><path d="M12 56c0-11 9-20 20-20s20 9 20 20"/></svg>
+              </div>
+            ` : ''}
+            <div class="desk-img">
+              <svg viewBox="0 0 120 70" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="5" y="10" width="110" height="8" rx="2" fill="#c4935a"/>
+                <rect x="8" y="6" width="104" height="10" rx="2" fill="#d4a66a"/>
+                <rect x="12" y="0" width="96" height="8" rx="1" fill="#e0b87a"/>
+                <rect x="15" y="18" width="4" height="52" rx="1" fill="#aaa"/>
+                <rect x="101" y="18" width="4" height="52" rx="1" fill="#aaa"/>
+              </svg>
+            </div>
+          </div>
+          <div class="desk-name ${isMe ? 'desk-name-me' : ''}">${u.username}</div>
+          ${u.studying ? `<div class="desk-time">${timeStr}</div>` : '<div class="desk-time desk-offline">오프라인</div>'}
+        </div>
+      `;
+    }).join('');
+  } catch (e) {
+    $('desk-grid').innerHTML = '<p style="color:var(--text2);font-size:.9rem">로딩 실패</p>';
+  }
+}
+
+async function loadWeeklyRanking() {
+  try {
+    const ranking = await api('/api/timer/ranking');
+    const el = $('timer-ranking');
+    if (!ranking.length) {
+      el.innerHTML = '<p style="color:var(--text2);font-size:.9rem">이번 주 공부 기록이 없습니다.</p>';
+      return;
+    }
+    el.innerHTML = ranking.map((r, i) => {
+      const h = Math.floor(r.totalDuration / 3600);
+      const m = Math.floor((r.totalDuration % 3600) / 60);
+      const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`;
+      return `
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+          <div style="display:flex;align-items:center;gap:12px">
+            <span style="font-size:1.2rem;min-width:32px">${medal}</span>
+            <span style="font-weight:600">${r.username}</span>
+          </div>
+          <span style="color:var(--primary);font-weight:600;font-family:'Outfit',sans-serif">${h}시간 ${m}분</span>
+        </div>
+      `;
+    }).join('');
+  } catch (e) {
+    $('timer-ranking').innerHTML = '<p style="color:var(--text2);font-size:.9rem">로딩 실패</p>';
+  }
+}
