@@ -1255,15 +1255,15 @@ select.form-input {
 
 .desk-scene {
   position: relative;
-  width: 120px;
-  height: 100px;
+  width: 100px;
+  height: 90px;
   display: flex;
   align-items: flex-end;
   justify-content: center;
 }
 
 .desk-img {
-  width: 120px;
+  width: 90px;
   position: relative;
   z-index: 3;
 }
@@ -1273,23 +1273,20 @@ select.form-input {
   height: auto;
 }
 
-/* Person behind desk */
 .person-icon {
   position: absolute;
-  bottom: 40px;
+  bottom: 28px;
   left: 50%;
   transform: translateX(-50%);
-  width: 50px;
-  height: auto;
+  width: 36px;
+  height: 36px;
+  color: #333;
   z-index: 2;
 }
 
-.person-icon img {
+.person-icon svg {
   width: 100%;
-  height: auto;
-  display: block;
-  pointer-events: none;
-  user-select: none;
+  height: 100%;
 }
 
 .desk-name {
@@ -1484,16 +1481,17 @@ select.form-input {
   }
 
   .desk-scene {
-    width: 100px;
-    height: 80px;
+    width: 80px;
+    height: 70px;
   }
 
   .desk-img {
-    width: 100px;
+    width: 70px;
   }
 
   .person-icon {
-    width: 36px;
-    bottom: 30px;
+    width: 28px;
+    height: 28px;
+    bottom: 22px;
   }
 }

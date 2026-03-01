@@ -1752,11 +1752,17 @@ async function loadDeskView() {
             ` : ''}
             ${showPerson ? `
               <div class="person-icon">
-                <img src="/person.png" alt="person" draggable="false">
+                <svg viewBox="0 0 64 64" fill="currentColor"><circle cx="32" cy="20" r="12"/><path d="M12 56c0-11 9-20 20-20s20 9 20 20"/></svg>
               </div>
             ` : ''}
             <div class="desk-img">
-              <img src="/desk.png" alt="desk" draggable="false">
+              <svg viewBox="0 0 120 70" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="5" y="10" width="110" height="8" rx="2" fill="${botColor}"/>
+                <rect x="8" y="6" width="104" height="10" rx="2" fill="${midColor}"/>
+                <rect x="12" y="0" width="96" height="8" rx="1" fill="${topColor}"/>
+                <rect x="15" y="18" width="4" height="52" rx="1" fill="#aaa"/>
+                <rect x="101" y="18" width="4" height="52" rx="1" fill="#aaa"/>
+              </svg>
             </div>
           </div>
           <div class="desk-name ${isMe ? 'desk-name-me' : ''}">${u.username}</div>
