@@ -1175,7 +1175,9 @@ select.form-input {
   }
 
   .auth-memo {
-    display: none
+    display: block;
+    margin-top: 24px;
+    width: 100%;
   }
 
   .sidebar {
