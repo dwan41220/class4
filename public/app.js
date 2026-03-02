@@ -1298,7 +1298,7 @@ function openQuizSelect(id, totalCount) {
   const html = `
     <div class="modal-overlay" onclick="closeModal(event)">
       <div class="modal" onclick="event.stopPropagation()">
-        <h2>게임 모드 선택</h2>
+        <h2>퀴즈 모드 선택</h2>
         <div class="form-group" style="margin-bottom:20px">
           <label>문항 수 (최대 ${totalCount})</label>
           <input type="number" id="quiz-play-count" class="form-input" value="${totalCount}" min="1" max="${totalCount}">
